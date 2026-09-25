@@ -70,4 +70,30 @@ describe("createTask", () => {
       }),
     );
   });
+
+  it("sends a parent task ID when creating a subtask", async () => {
+    await createTask(
+      "Subtask",
+      "",
+      "project-1",
+      undefined,
+      "to-do",
+      undefined,
+      undefined,
+      "no-priority",
+      undefined,
+      undefined,
+      "parent-task-1",
+      ["label-1", "label-2"],
+    );
+
+    expect(mocks.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        json: expect.objectContaining({
+          parentTaskId: "parent-task-1",
+          labelIds: ["label-1", "label-2"],
+        }),
+      }),
+    );
+  });
 });

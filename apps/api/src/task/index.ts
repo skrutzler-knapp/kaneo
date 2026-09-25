@@ -1,5 +1,6 @@
 import { withVerifiedStorageObject } from "../storage/cleanup-queue";
 import { eq } from "drizzle-orm";
+import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { requireEntitlement } from "../billing/require-entitlement-middleware";
 import db from "../database";
@@ -152,6 +153,26 @@ const listTasksRoute = createRoute({
   },
 });
 
+async function requireSubtaskParentUpdatePermission(c: Context, next: Next) {
+  const body = (await c.req.json().catch(() => ({}))) as {
+    parentTaskId?: unknown;
+  };
+  if (typeof body.parentTaskId !== "string") return next();
+
+  return requireWorkspacePermission({ task: ["update"] })(c, next);
+}
+
+async function requireTaskLabelCreatePermission(c: Context, next: Next) {
+  const body = (await c.req.json().catch(() => ({}))) as {
+    labelIds?: unknown;
+  };
+  if (!Array.isArray(body.labelIds) || body.labelIds.length === 0) {
+    return next();
+  }
+
+  return requireWorkspacePermission({ label: ["update"] })(c, next);
+}
+
 const bulkUpdateTasksRoute = createRoute({
   method: "patch",
   operationId: "bulkUpdateTasks",
@@ -283,10 +304,12 @@ const createTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Create task",
   description:
-    "Add a task to a project. It is placed in the column named by `status`.",
+    "Add a task to a project, optionally assigning workspace labels and linking it as a subtask in the same transaction. It is placed in the column named by `status`.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["create"] }),
+    requireSubtaskParentUpdatePermission,
+    requireTaskLabelCreatePermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -300,8 +323,10 @@ const createTaskRoute = createRoute({
     200: jsonResponse("The created task", taskSchema),
     400: errorResponse("Invalid body, or unknown project"),
     403: errorResponse(
-      "No workspace access, or missing task:create permission",
+      "No workspace access, or missing task:create, label:update, or parent task:update permission",
     ),
+    404: errorResponse("Parent task or workspace label not found"),
+    409: errorResponse("A selected workspace label is being deleted"),
   },
 });
 
@@ -885,6 +910,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       userId,
       customFields,
       draftAssetIds,
+      parentTaskId,
+      labelIds,
     } = c.req.valid("json");
 
     const parsedStartDate =
@@ -910,6 +937,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       status,
       customFields,
       draftAssetIds,
+      parentTaskId,
+      labelIds,
     });
 
     return c.json(task, 200);

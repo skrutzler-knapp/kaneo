@@ -2530,8 +2530,12 @@
 			"deleteDialogDescription": "Esto eliminará permanentemente la tarea y sus datos. Esta acción no puede deshacerse.",
 			"deleteAction": "Eliminar tarea",
 			"completeAria": "Marcar subtarea como completada",
-			"progress": "{{completed}} de {{total}} subtareas completadas",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+"progress": "{{completed}} de {{total}} subtareas completadas",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Propiedades",

@@ -9,12 +9,22 @@ type TaskCardProps = {
   task: Task;
   disableDragDrop?: boolean;
   isFinalColumn?: boolean;
+  dragData?: { type: "subtask"; parentTaskId: string };
+  subtaskCount?: number;
+  subtasksExpanded?: boolean;
+  groupSubtasks?: boolean;
+  onToggleSubtasks?: () => void;
 };
 
 function TaskCard({
   task,
   disableDragDrop = false,
   isFinalColumn,
+  dragData,
+  subtaskCount,
+  subtasksExpanded,
+  groupSubtasks,
+  onToggleSubtasks,
 }: TaskCardProps) {
   const {
     attributes,
@@ -26,7 +36,7 @@ function TaskCard({
   } = useSortable({
     id: task.id,
     disabled: disableDragDrop,
-    data: { isFinalColumn },
+    data: { ...dragData, isFinalColumn },
   });
   const { handleKeyDown } = useTaskCardClick(task, listeners);
 
@@ -55,6 +65,10 @@ function TaskCard({
         isFinalColumn={isFinalColumn}
         isDragging={isDragging}
         dragListeners={listeners}
+        subtaskCount={subtaskCount}
+        subtasksExpanded={subtasksExpanded}
+        groupSubtasks={groupSubtasks}
+        onToggleSubtasks={onToggleSubtasks}
       />
     </div>
   );

@@ -2515,8 +2515,12 @@
 			"deleteDialogDescription": "Ова трајно ќе ја отстрани задачата и сите нејзини податоци. Не можеш да ја вратиш оваа акција.",
 			"deleteAction": "Избриши задача",
 			"completeAria": "Означи ја подзадачата како завршена",
-			"progress": "Завршени се {{completed}} од {{total}} подзадачи",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+"progress": "Завршени се {{completed}} од {{total}} подзадачи",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Својства",

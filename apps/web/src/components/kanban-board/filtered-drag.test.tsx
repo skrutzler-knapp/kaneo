@@ -74,6 +74,10 @@ vi.mock("./column", () => ({
   ),
 }));
 vi.mock("./task-card", () => ({ default: () => null }));
+vi.mock("./subtask-expansion-panel", () => ({ default: () => null }));
+vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
+  default: () => ({ data: [], isLoading: false }),
+}));
 vi.mock("@dnd-kit/core", () => ({
   DndContext: ({
     children,

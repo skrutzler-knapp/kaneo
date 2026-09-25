@@ -14,6 +14,29 @@ async function getTaskRelations(
   workspaceId: string,
   userId: string,
 ) {
+  return getRelationsForTaskIds([taskId], workspaceId, userId);
+}
+
+async function getProjectTaskRelations(projectId: string, workspaceId: string, userId: string) {
+  const projectTasks = await db
+    .select({ id: taskTable.id })
+    .from(taskTable)
+    .where(eq(taskTable.projectId, projectId));
+
+  return getRelationsForTaskIds(
+    projectTasks.map((task) => task.id),
+    workspaceId,
+    userId,
+  );
+}
+
+async function getRelationsForTaskIds(
+  taskIdsInScope: string[],
+  workspaceId: string,
+  userId: string,
+) {
+  if (taskIdsInScope.length === 0) return [];
+
   const relations = await db
     .select({
       id: taskRelationTable.id,
@@ -25,8 +48,8 @@ async function getTaskRelations(
     .from(taskRelationTable)
     .where(
       or(
-        eq(taskRelationTable.sourceTaskId, taskId),
-        eq(taskRelationTable.targetTaskId, taskId),
+        inArray(taskRelationTable.sourceTaskId, taskIdsInScope),
+        inArray(taskRelationTable.targetTaskId, taskIdsInScope),
       ),
     );
 
@@ -89,4 +112,5 @@ async function getTaskRelations(
     }));
 }
 
+export { getProjectTaskRelations };
 export default getTaskRelations;

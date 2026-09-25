@@ -1,4 +1,4 @@
-import { Filter, PanelsTopLeft, Rows3, X } from "lucide-react";
+import { Filter, ListTree, PanelsTopLeft, Rows3, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import SortControl from "@/components/common/sort-control";
@@ -26,6 +26,7 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon } from "@/lib/priority";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { SortConfig } from "@/lib/sort-tasks";
 import { useBackgroundStore } from "@/store/background";
 import type { ProjectWithTasks } from "@/types/project";
@@ -164,6 +165,10 @@ export default function BoardToolbar({
   usedCustomFieldValues = {},
 }: BoardToolbarProps) {
   const { t } = useTranslation();
+  const groupSubtasks = useUserPreferencesStore((state) => state.groupSubtasks);
+  const setGroupSubtasks = useUserPreferencesStore(
+    (state) => state.setGroupSubtasks,
+  );
   const selectedStatusIds = filters.status ?? [];
   const selectedPriorityIds = filters.priority ?? [];
   const selectedAssigneeIds = filters.assignee ?? [];
@@ -835,21 +840,47 @@ export default function BoardToolbar({
           </div>
 
           <div className="inline-flex items-center gap-1">
+            <div className="inline-flex h-7 items-center rounded-md border border-border bg-background p-0.5">
+              <div
+                className={`inline-flex h-6 items-center rounded-sm ${
+                  viewMode === "board" ? "bg-accent" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  aria-pressed={viewMode === "board"}
+                  className={`inline-flex h-6 items-center gap-1 rounded-sm px-2 text-xs font-medium transition-colors ${
+                    viewMode === "board"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  }`}
+                  onClick={() => setViewMode("board")}
+                >
+                  <PanelsTopLeft className="h-3 w-3" />
+                  {t("tasks:view.board")}
+                </button>
+                {viewMode === "board" && (
+                  <button
+                    type="button"
+                    aria-label={t("tasks:subtasks.groupToggle")}
+                    aria-pressed={groupSubtasks}
+                    title={t("tasks:subtasks.groupToggle")}
+                    className={`ml-1 mr-0.5 inline-flex size-6 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      groupSubtasks
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+                    }`}
+                    onClick={() => setGroupSubtasks(!groupSubtasks)}
+                  >
+                    <ListTree className="size-4" />
+                  </button>
+                )}
+              </div>
+            </div>
             <button
               type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                viewMode === "board"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              }`}
-              onClick={() => setViewMode("board")}
-            >
-              <PanelsTopLeft className="h-3 w-3" />
-              {t("tasks:view.board")}
-            </button>
-            <button
-              type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
+              aria-pressed={viewMode === "list"}
+              className={`inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs font-medium transition-colors ${
                 viewMode === "list"
                   ? "bg-accent text-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"

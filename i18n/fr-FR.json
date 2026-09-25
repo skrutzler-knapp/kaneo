@@ -2530,8 +2530,12 @@
 			"deleteDialogDescription": "Cela supprimera définitivement la tâche et toutes ses données. Vous ne pouvez pas annuler cette action.",
 			"deleteAction": "Supprimer la tâche",
 			"completeAria": "Marquer la sous-tâche comme terminée",
-			"progress": "{{completed}} sous-tâches terminées sur {{total}}",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+"progress": "{{completed}} sous-tâches terminées sur {{total}}",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Propriétés",

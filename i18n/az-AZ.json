@@ -2515,8 +2515,12 @@
 			"deleteDialogDescription": "Bu, tapşırığı və bütün məlumatlarını həmişəlik siləcək. Bu əməliyyatı geri qaytara bilməzsiniz.",
 			"deleteAction": "Tapşırığı sil",
 			"completeAria": "Alt tapşırığı tamamlanmış kimi işarələ",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-			"progress": "{{completed}} of {{total}} subtasks completed"
+"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"progress": "{{completed}} of {{total}} subtasks completed",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Xüsusiyyətlər",

@@ -103,6 +103,7 @@ type CreateTaskModalProps = {
   onClose: () => void;
   status?: string;
   projectId?: string;
+  parentTaskId?: string;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -176,6 +177,7 @@ function CreateTaskModalContent({
   onClose,
   status,
   projectId,
+  parentTaskId,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
   const { project, setProject } = useProjectStore();
@@ -554,6 +556,8 @@ function CreateTaskModalContent({
           startDate: startDate ? startDate.toISOString() : undefined,
           dueDate: dueDate ? dueDate.toISOString() : undefined,
           status: submitStatus,
+          parentTaskId,
+          labelIds: labels.map((label) => label.id),
           draftAssetIds: stagedAssetsRef.current.filter((id) =>
             description.includes(`/asset/${id}`),
           ),
@@ -566,22 +570,9 @@ function CreateTaskModalContent({
         }),
       );
 
-      for (const label of labels) {
-        try {
-          await createLabel({
-            name: label.name,
-            color: label.color,
-            taskId: savedTask.id,
-            workspaceId: workspace.id,
-          });
-        } catch (error) {
-          console.error("Failed to create label:", error);
-        }
-      }
-
       stagedAssetsRef.current = [];
       if (!activeRef.current) return;
-      syncTaskIntoProject(savedTask);
+  if (!parentTaskId) syncTaskIntoProject(savedTask);
       toast.success(t("common:modals.createTask.successCreated"));
 
       if (createMore) {
@@ -1635,7 +1626,12 @@ function CreateTaskModal(props: CreateTaskModalProps) {
   // upload drafts, instead of carrying confidential fields into a new context.
   return (
     <CreateTaskModalContent
-      key={JSON.stringify([workspace?.id, location.pathname, props.projectId])}
+      key={JSON.stringify([
+        workspace?.id,
+        location.pathname,
+        props.projectId,
+        props.parentTaskId,
+      ])}
       {...props}
     />
   );

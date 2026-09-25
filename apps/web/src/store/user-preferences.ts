@@ -17,6 +17,8 @@ type UserPreferencesStore = {
 
   viewMode: "board" | "list";
   setViewMode: (mode: "board" | "list") => void;
+  groupSubtasks: boolean;
+  setGroupSubtasks: (group: boolean) => void;
 
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
@@ -86,6 +88,8 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       viewMode: "board",
       setViewMode: (mode) => set({ viewMode: mode }),
+      groupSubtasks: true,
+      setGroupSubtasks: (group) => set({ groupSubtasks: group }),
 
       compactMode: false,
       setCompactMode: (compact) => set({ compactMode: compact }),

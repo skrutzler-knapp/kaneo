@@ -9911,7 +9911,7 @@
           "Tasks"
         ],
         "summary": "Create task",
-        "description": "Add a task to a project. It is placed in the column named by `status`.",
+        "description": "Add a task to a project, optionally assigning workspace labels and linking it as a subtask in the same transaction. It is placed in the column named by `status`.",
         "parameters": [
           {
             "schema": {
@@ -9934,6 +9934,18 @@
                   },
                   "description": {
                     "type": "string"
+                  },
+                  "parentTaskId": {
+                    "type": "string",
+                    "description": "Create this task as a subtask of another task in the project."
+                  },
+                  "labelIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 100,
+                    "description": "Workspace labels to assign to the task during creation."
                   },
                   "startDate": {
                     "type": "string"
@@ -10020,7 +10032,27 @@
             "description": "Missing or invalid credentials"
           },
           "403": {
-            "description": "No workspace access, or missing task:create permission",
+            "description": "No workspace access, or missing task:create, label:update, or parent task:update permission",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Parent task or workspace label not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A selected workspace label is being deleted",
             "content": {
               "text/plain": {
                 "schema": {
@@ -18272,6 +18304,64 @@
           },
           "404": {
             "description": "Telegram integration not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/task-relation/project/{projectId}": {
+      "get": {
+        "operationId": "getProjectTaskRelations",
+        "tags": [
+          "Task Relations"
+        ],
+        "summary": "Get task relations for a project",
+        "description": "Get task relations touching tasks in a project, including related task summaries. Relations pointing outside the caller's workspace are omitted.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project task relations with linked task summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskRelationWithTasks"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown project, or its workspace could not be determined",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials"
+          },
+          "403": {
+            "description": "No access to the project's workspace",
             "content": {
               "text/plain": {
                 "schema": {
