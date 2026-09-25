@@ -29,6 +29,7 @@ import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
+import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import {
   dueDateStatusColors,
   getDueDateStatus,
@@ -120,21 +121,29 @@ export default function TaskPropertiesSidebar({
     (member) => member.userId === task?.userId,
   );
 
-  const handleCopyTaskLink = () => {
-    navigator.clipboard.writeText(
+  const handleCopyTaskLink = async () => {
+    const copied = await copyToClipboard(
       `${window.location.origin}/dashboard/workspace/${workspaceId}/project/${projectId}/task/${taskId}`,
     );
+    if (!copied) {
+      toast.error(t("team:invitations.copyFailed"));
+      return;
+    }
     toast.message(t("tasks:properties.copyTaskLink"));
   };
 
-  const handleCopyTaskBranch = () => {
+  const handleCopyTaskBranch = async () => {
     const branchName = generateBranchName(
       branchPattern,
       projectSlug,
       taskNumber,
       task?.title,
     );
-    navigator.clipboard.writeText(branchName);
+    const copied = await copyToClipboard(branchName);
+    if (!copied) {
+      toast.error(t("team:invitations.copyFailed"));
+      return;
+    }
     toast.message(t("tasks:properties.copyTaskBranch"));
   };
 
