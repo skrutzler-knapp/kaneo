@@ -22,6 +22,7 @@ import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { useTaskCopyShortcuts } from "@/hooks/use-task-copy-shortcuts";
 import { getColumnIcon } from "@/lib/column";
+import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import {
   dueDateStatusColors,
   getDueDateStatus,
@@ -124,9 +125,9 @@ export default function TaskPropertiesSidebar({
     (member) => member.userId === task?.userId,
   );
 
-  const handleCopyTaskLink = () => {
+  const handleCopyTaskLink = async () => {
     if (!taskId) return;
-    navigator.clipboard.writeText(
+    const copied = await copyToClipboard(
       generateLink(
         getTaskPath({
           workspaceId,
@@ -139,17 +140,25 @@ export default function TaskPropertiesSidebar({
         }),
       ),
     );
+    if (!copied) {
+      toast.error(t("team:invitations.copyFailed"));
+      return;
+    }
     toast.message(t("tasks:properties.taskLinkCopied"));
   };
 
-  const handleCopyTaskBranch = () => {
+  const handleCopyTaskBranch = async () => {
     const branchName = generateBranchName(
       copiedBranchPattern,
       projectSlug,
       taskNumber,
       task?.title,
     );
-    navigator.clipboard.writeText(branchName);
+    const copied = await copyToClipboard(branchName);
+    if (!copied) {
+      toast.error(t("team:invitations.copyFailed"));
+      return;
+    }
     toast.message(t("tasks:properties.taskBranchCopied"));
   };
 
