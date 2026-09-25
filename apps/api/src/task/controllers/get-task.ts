@@ -1,7 +1,17 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { taskTable, userTable } from "../../database/schema";
+import {
+  externalLinkTable,
+  integrationTable,
+  taskTable,
+  userTable,
+} from "../../database/schema";
+import {
+  gitlabAssigneeDisplay,
+  gitlabOwnsAssignees,
+  readGitlabAssignees,
+} from "../../plugins/gitlab/utils/assignee-sync";
 
 async function getTask(taskId: string) {
   const task = await db
@@ -19,6 +29,7 @@ async function getTask(taskId: string) {
       userId: taskTable.userId,
       assigneeName: userTable.name,
       assigneeId: userTable.id,
+      assigneeImage: userTable.image,
       projectId: taskTable.projectId,
     })
     .from(taskTable)
@@ -30,6 +41,47 @@ async function getTask(taskId: string) {
     throw new HTTPException(404, {
       message: "Task not found",
     });
+  }
+
+  const [externalLink] = await db
+    .select({
+      resourceType: externalLinkTable.resourceType,
+      metadata: externalLinkTable.metadata,
+      integrationType: integrationTable.type,
+      integrationIsActive: integrationTable.isActive,
+      integrationConfig: integrationTable.config,
+    })
+    .from(externalLinkTable)
+    .innerJoin(
+      integrationTable,
+      eq(externalLinkTable.integrationId, integrationTable.id),
+    )
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.resourceType, "issue"),
+        eq(integrationTable.type, "gitlab"),
+        eq(integrationTable.isActive, true),
+        eq(integrationTable.projectId, task[0].projectId),
+      ),
+    )
+    .limit(1);
+
+  if (
+    externalLink?.resourceType === "issue" &&
+    externalLink.integrationType === "gitlab" &&
+    externalLink.integrationIsActive === true &&
+    gitlabOwnsAssignees(externalLink.integrationConfig)
+  ) {
+    const display = gitlabAssigneeDisplay(
+      readGitlabAssignees(externalLink.metadata),
+    );
+    return {
+      ...task[0],
+      userId: null,
+      assigneeId: null,
+      ...display,
+    };
   }
 
   return task[0];

@@ -351,14 +351,22 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
 
             {showAssignees && (
               <div className="flex-shrink-0">
-                {task.userId ? (
-                  <Avatar className="h-6 w-6">
+                {task.userId || task.assigneeName ? (
+                  <Avatar
+                    className="h-6 w-6"
+                    title={
+                      task.assigneeUsername ||
+                      assignee?.user?.name ||
+                      task.assigneeName ||
+                      undefined
+                    }
+                  >
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={assignee?.user?.image ?? task.assigneeImage ?? ""}
+                      alt={assignee?.user?.name || task.assigneeName || ""}
                     />
                     <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(assignee?.user?.name || task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (

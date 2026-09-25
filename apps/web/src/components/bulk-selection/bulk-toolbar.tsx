@@ -40,6 +40,7 @@ import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
+import useGitlabAssigneeOwnership from "@/hooks/use-gitlab-assignee-ownership";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
@@ -81,6 +82,9 @@ function BulkToolbar() {
     [],
   );
   const { project } = useProjectStore();
+  const assigneesManagedByGitlab = useGitlabAssigneeOwnership(
+    project?.id ?? "",
+  );
   const {
     bulkMoveToBacklog,
     bulkDelete,
@@ -102,7 +106,7 @@ function BulkToolbar() {
     useWorkspacePermission();
   const canEdit = canUpdateTasks();
   const canDelete = canDeleteTasks();
-  const canAssign = canAssignTasks();
+  const canAssign = canAssignTasks() && !assigneesManagedByGitlab;
   const canEditLabels = canUpdateLabels();
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);

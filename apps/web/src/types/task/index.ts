@@ -36,6 +36,7 @@ type Task = {
   userId: string | null;
   assigneeId: string | null;
   assigneeName: string | null;
+  assigneeUsername?: string | null;
   assigneeImage?: string | null;
   projectId: string;
   columnId?: string | null;

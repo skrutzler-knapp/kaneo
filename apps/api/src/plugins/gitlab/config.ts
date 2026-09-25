@@ -13,6 +13,7 @@ export const gitlabConfigSchema = v.object({
   branchPattern: v.optional(v.string()),
   customBranchRegex: v.optional(v.string()),
   commentTaskLinkOnGitlabIssue: v.optional(v.boolean()),
+  gitlabOwnsAssignees: v.optional(v.boolean()),
   statusTransitions: v.optional(
     v.object({
       onBranchPush: v.optional(v.string()),
@@ -51,6 +52,7 @@ export const GITLAB_CLOUD_URL = "https://gitlab.com";
 export const defaultGitlabConfig: Partial<GitlabConfig> = {
   branchPattern: "{slug}-{number}",
   commentTaskLinkOnGitlabIssue: true,
+  gitlabOwnsAssignees: false,
   statusTransitions: {
     onBranchPush: "in-progress",
     onPROpen: "in-review",

@@ -11,9 +11,11 @@ export type GitlabWebhookLabel = {
 };
 
 export type GitlabWebhookUser = {
+  id?: number | string;
   name?: string;
   username?: string;
   avatar_url?: string | null;
+  email?: string | null;
 };
 
 export function labelTitles(

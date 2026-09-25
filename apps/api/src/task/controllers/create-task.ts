@@ -11,6 +11,7 @@ import {
   userTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { assertKaneoCanChangeAssignee } from "../../plugins/gitlab/utils/assignee-sync";
 import {
   assertAssignableUser,
   getProjectWorkspaceId,
@@ -118,6 +119,7 @@ async function createTask({
   let assignee: { name: string } | undefined;
 
   if (normalizedUserId) {
+    await assertKaneoCanChangeAssignee(projectId);
     await assertAssignableUser(
       normalizedUserId,
       await getProjectWorkspaceId(projectId),

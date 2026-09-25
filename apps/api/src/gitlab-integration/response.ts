@@ -28,6 +28,10 @@ export const gitlabIntegrationSchema = z
       description:
         "When on, Kaneo comments a link back to the task on each issue opened in GitLab. Issues Kaneo creates from tasks are not commented on.",
     }),
+    gitlabOwnsAssignees: z.boolean().optional().openapi({
+      description:
+        "When on, GitLab is authoritative for assignees; webhook assignees are matched to workspace members by email and Kaneo-side assignment changes are rejected.",
+    }),
     isActive: z.boolean().nullable(),
     createdAt: responseTimestamp,
     updatedAt: responseTimestamp,

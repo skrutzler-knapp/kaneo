@@ -22,6 +22,7 @@ import { useUpdateTaskPriority } from "@/hooks/mutations/task/use-update-task-st
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
+import useGitlabAssigneeOwnership from "@/hooks/use-gitlab-assignee-ownership";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { getColumnIcon } from "@/lib/column";
 import { generateLink } from "@/lib/generate-link";
@@ -79,9 +80,12 @@ export default function TaskCardContextMenuContent({
   const { canCreateTasks, canUpdateTasks, canDeleteTasks, canAssignTasks } =
     useWorkspacePermission();
   const canCreate = canCreateTasks();
+  const assigneesManagedByGitlab = useGitlabAssigneeOwnership(
+    taskCardContext.projectId,
+  );
   const canEdit = canUpdateTasks();
   const canDelete = canDeleteTasks();
-  const canAssign = canAssignTasks();
+  const canAssign = canAssignTasks() && !assigneesManagedByGitlab;
 
   const usersOptions = useMemo(() => {
     return workspaceUsers?.members?.map((member) => ({

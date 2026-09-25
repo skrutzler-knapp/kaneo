@@ -162,6 +162,7 @@ const bulkUpdateTasksRoute = createRoute({
       "No workspace access, or missing the permission the operation needs",
     ),
     404: errorResponse("No tasks found"),
+    409: errorResponse("Task assignees are managed by GitLab"),
   },
 });
 
@@ -194,7 +195,9 @@ const createTaskRoute = createRoute({
       "No workspace access, or missing task:create, label:update, or parent task:update permission",
     ),
     404: errorResponse("Parent task or workspace label not found"),
-    409: errorResponse("A selected workspace label is being deleted"),
+    409: errorResponse(
+      "A selected workspace label is being deleted, or assignees are managed by GitLab",
+    ),
   },
 });
 
@@ -309,6 +312,7 @@ const updateTaskRoute = createRoute({
     403: errorResponse(
       "No workspace access, or missing task:update or task:assign permission",
     ),
+    409: errorResponse("Task assignees are managed by GitLab"),
   },
 });
 
@@ -467,6 +471,7 @@ const updateTaskAssigneeRoute = createRoute({
       "No workspace access, or missing task:assign permission",
     ),
     404: errorResponse("Assignee is not a member of the workspace"),
+    409: errorResponse("Task assignees are managed by GitLab"),
   },
 });
 
@@ -582,6 +587,7 @@ const finalizeTaskImageUploadRoute = createRoute({
     400: errorResponse(
       "Invalid upload, or the key does not belong to this task",
     ),
+    409: errorResponse("Task assignees are managed by GitLab"),
     403: errorResponse(
       "No workspace access, or missing task:update permission",
     ),

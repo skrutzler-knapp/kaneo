@@ -140,7 +140,11 @@ beforeEach(() => {
   mocks.claimTaskNumber.mockResolvedValue(7);
   mocks.resolveTargetStatus.mockResolvedValue("to-do");
   mocks.columnFindFirst.mockResolvedValue(null);
-  mocks.projectFindFirst.mockResolvedValue(null);
+  mocks.projectFindFirst.mockResolvedValue({
+    id: "project-1",
+    workspaceId: "workspace-1",
+    slug: "KAN",
+  });
   mocks.createExternalLink.mockResolvedValue({ id: "link-1" });
   mocks.publishEvent.mockResolvedValue(undefined);
 });
@@ -173,6 +177,51 @@ describe("handleGitlabIssueOpened", () => {
         resourceType: "issue",
         externalId: "42",
         url: "https://gitlab.com/usekaneo/kaneo/-/issues/42",
+      }),
+    );
+  });
+
+  it("stores the GitLab assignee externally without assigning a Kaneo user", async () => {
+    const gitlabOwnedIntegration = {
+      ...integration,
+      config: JSON.stringify({
+        baseUrl: "https://gitlab.com",
+        projectPath: "usekaneo/kaneo",
+        accessToken: "token",
+        commentTaskLinkOnGitlabIssue: false,
+        gitlabOwnsAssignees: true,
+      }),
+    };
+    mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([
+      gitlabOwnedIntegration,
+    ]);
+    const payload = {
+      ...issueOpenedPayload([]),
+      assignees: [
+        {
+          id: 42,
+          username: "ada",
+          name: "Ada Lovelace",
+          avatar_url: "https://gitlab.com/ada.png",
+        },
+      ],
+    };
+
+    await handleGitlabIssueOpened(payload);
+
+    expect(mocks.insertedValues[0]?.userId).toBeNull();
+    expect(mocks.createExternalLink).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          gitlabAssignees: [
+            {
+              id: "42",
+              username: "ada",
+              name: "Ada Lovelace",
+              avatarUrl: "https://gitlab.com/ada.png",
+            },
+          ],
+        }),
       }),
     );
   });

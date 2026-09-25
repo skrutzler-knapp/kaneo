@@ -38,7 +38,9 @@ export const taskSchema = z
 export const taskWithAssigneeSchema = taskSchema
   .extend({
     assigneeName: z.string().nullable(),
+    assigneeUsername: z.string().nullable().optional(),
     assigneeId: z.string().nullable(),
+    assigneeImage: z.string().nullable(),
   })
   .openapi("TaskWithAssignee");
 
@@ -82,6 +84,7 @@ export const boardTaskSchema = z
     createdAt: responseTimestamp,
     userId: z.string().nullable(),
     assigneeName: z.string().nullable(),
+    assigneeUsername: z.string().nullable().optional(),
     assigneeId: z.string().nullable(),
     assigneeImage: z.string().nullable(),
     projectId: z.string(),

@@ -101,14 +101,22 @@ export default function SubtaskRow({
                 type="button"
                 className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
               >
-                {task.userId && assignee ? (
-                  <Avatar className="h-5 w-5">
+                {task.assigneeName || (task.userId && assignee) ? (
+                  <Avatar
+                    className="h-5 w-5"
+                    title={
+                      task.assigneeUsername ||
+                      assignee?.user?.name ||
+                      task.assigneeName ||
+                      undefined
+                    }
+                  >
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={assignee?.user?.image ?? task.assigneeImage ?? ""}
+                      alt={assignee?.user?.name || task.assigneeName || ""}
                     />
                     <AvatarFallback className="text-[9px] font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(assignee?.user?.name || task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (

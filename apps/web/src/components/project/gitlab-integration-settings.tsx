@@ -553,6 +553,38 @@ export function GitlabIntegrationSettings({
               />
             </div>
 
+            <Separator />
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <p className="text-sm font-medium">
+                  {t("settings:gitlabIntegration.assigneeSourceTitle")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings:gitlabIntegration.assigneeSourceHint")}
+                </p>
+              </div>
+              <Switch
+                checked={integration.gitlabOwnsAssignees ?? false}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await updateGitlabSettings({
+                      projectId,
+                      json: { gitlabOwnsAssignees: checked },
+                    });
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : t(
+                            "settings:gitlabIntegration.toast.settingsUpdateError",
+                          ),
+                    );
+                  }
+                }}
+                disabled={isUpdatingSettings}
+              />
+            </div>
+
             {integration.webhookUrl && (
               <>
                 <Separator />

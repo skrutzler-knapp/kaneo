@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { assertKaneoCanChangeAssignee } from "../../plugins/gitlab/utils/assignee-sync";
 import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
 import {
   assertAssignableUser,
@@ -36,6 +37,7 @@ async function updateTask(
         description === undefined ? sql<null>`null` : taskTable.description,
       status: taskTable.status,
       projectId: taskTable.projectId,
+      userId: taskTable.userId,
     })
     .from(taskTable)
     .where(eq(taskTable.id, id))
@@ -55,11 +57,16 @@ async function updateTask(
 
   await assertValidTaskStatus(status, projectId);
 
-  const normalizedUserId = userId?.trim() || undefined;
+  const nextAssigneeId =
+    userId === undefined ? existingTask.userId : userId.trim() || null;
 
-  if (normalizedUserId) {
+  if (existingTask.userId !== nextAssigneeId) {
+    await assertKaneoCanChangeAssignee(projectId);
+  }
+
+  if (nextAssigneeId) {
     await assertAssignableUser(
-      normalizedUserId,
+      nextAssigneeId,
       await getProjectWorkspaceId(projectId),
     );
   }
@@ -83,7 +90,7 @@ async function updateTask(
       description,
       priority,
       position,
-      userId: normalizedUserId ?? null,
+      userId: nextAssigneeId,
     })
     .where(eq(taskTable.id, id))
     .returning({

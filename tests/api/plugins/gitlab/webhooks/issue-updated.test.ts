@@ -134,6 +134,7 @@ beforeEach(() => {
     id: "task-1",
     projectId: "project-1",
     project: { workspaceId: "workspace-1" },
+    userId: null,
   });
   mocks.updateExternalLink.mockResolvedValue(undefined);
 });
@@ -186,6 +187,148 @@ describe("handleGitlabIssueUpdated", () => {
 
     expect(mocks.findExternalLink).not.toHaveBeenCalled();
     expect(mocks.taskUpdates).toHaveLength(0);
+  });
+
+  it("stores GitLab assignee data without writing a Kaneo user assignment", async () => {
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+      metadata: null,
+    });
+    mocks.taskFindFirst.mockResolvedValue({
+      id: "task-1",
+      projectId: "project-1",
+      title: "Old title",
+      userId: "existing-kaneo-user",
+      project: { workspaceId: "workspace-1" },
+    });
+    const gitlabOwnedIntegration = {
+      ...integration,
+      config: JSON.stringify({
+        baseUrl: "https://gitlab.com",
+        projectPath: "usekaneo/kaneo",
+        accessToken: "token",
+        gitlabOwnsAssignees: true,
+      }),
+    };
+    mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([
+      gitlabOwnedIntegration,
+    ]);
+    const assignees = [
+      {
+        id: 42,
+        username: "ada",
+        name: "Ada Lovelace",
+        avatar_url: "https://gitlab.com/ada.png",
+      },
+    ];
+
+    await handleGitlabIssueUpdated({
+      ...titleChangedPayload("Unchanged title"),
+      changes: { assignees: { previous: [], current: assignees } },
+    });
+
+    expect(mocks.taskUpdates).toEqual([{ userId: null }]);
+    expect(mocks.publishEvent).toHaveBeenCalledWith(
+      "task.updated",
+      expect.objectContaining({
+        taskId: "task-1",
+      }),
+    );
+    expect(mocks.updateExternalLink).toHaveBeenCalledWith(
+      "link-1",
+      expect.objectContaining({
+        metadata: {
+          gitlabAssignees: [
+            {
+              id: "42",
+              username: "ada",
+              name: "Ada Lovelace",
+              avatarUrl: "https://gitlab.com/ada.png",
+            },
+          ],
+        },
+      }),
+    );
+  });
+
+  it("does not import GitLab assignment details unless GitLab owns assignees", async () => {
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+      metadata: null,
+    });
+
+    await handleGitlabIssueUpdated({
+      ...titleChangedPayload("Unchanged title"),
+      changes: {
+        assignees: {
+          previous: [],
+          current: [{ id: 42, username: "ada", name: "Ada Lovelace" }],
+        },
+      },
+    });
+
+    expect(mocks.updateExternalLink).not.toHaveBeenCalled();
+    expect(mocks.taskUpdates).toHaveLength(0);
+  });
+
+  it("stores multiple GitLab assignees without assigning a Kaneo user", async () => {
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+      metadata: null,
+    });
+    mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([
+      {
+        ...integration,
+        config: JSON.stringify({
+          baseUrl: "https://gitlab.com",
+          projectPath: "usekaneo/kaneo",
+          accessToken: "token",
+          gitlabOwnsAssignees: true,
+        }),
+      },
+    ]);
+    mocks.taskFindFirst.mockResolvedValue({
+      id: "task-1",
+      projectId: "project-1",
+      title: "Old title",
+      userId: null,
+      project: { workspaceId: "workspace-1" },
+    });
+    const assignees = [
+      { id: 42, username: "ada", name: "Ada Lovelace" },
+      { id: 43, username: "grace", name: "Grace Hopper" },
+    ];
+
+    await handleGitlabIssueUpdated({
+      ...titleChangedPayload("Unchanged title"),
+      changes: { assignees: { current: assignees } },
+    });
+
+    expect(mocks.taskUpdates).toHaveLength(0);
+    expect(mocks.updateExternalLink).toHaveBeenCalledWith(
+      "link-1",
+      expect.objectContaining({
+        metadata: {
+          gitlabAssignees: [
+            {
+              id: "42",
+              username: "ada",
+              name: "Ada Lovelace",
+              avatarUrl: null,
+            },
+            {
+              id: "43",
+              username: "grace",
+              name: "Grace Hopper",
+              avatarUrl: null,
+            },
+          ],
+        },
+      }),
+    );
   });
 
   it("uses the complete current GitLab label list rather than the webhook delta", async () => {

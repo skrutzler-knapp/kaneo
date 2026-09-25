@@ -11,7 +11,9 @@ import {
   extractIssuePriority,
   extractIssueStatus,
 } from "../../github/utils/extract-priority";
+import type { GitlabConfig } from "../config";
 import { findAllIntegrationsByGitlabProject } from "../services/integration-lookup";
+import { snapshotGitlabAssignees } from "../utils/assignee-sync";
 import { taskDescriptionFromIssue } from "../utils/issue-description";
 import {
   isEchoOf,
@@ -21,14 +23,13 @@ import {
 import type {
   GitlabWebhookLabel,
   GitlabWebhookProject,
+  GitlabWebhookUser,
 } from "../utils/payload";
 import { labelTitles } from "../utils/payload";
-import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
 import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
-import type { GitlabConfig } from "../config";
+import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
-// Edits and label changes arrive together as one "update" action.
 type IssueUpdatedPayload = {
   object_attributes: {
     iid: number;
@@ -37,10 +38,15 @@ type IssueUpdatedPayload = {
     url: string;
     action?: string;
   };
+  assignees?: GitlabWebhookUser[];
   labels?: GitlabWebhookLabel[];
   changes?: {
     title?: { previous?: string | null; current?: string | null };
     description?: { previous?: string | null; current?: string | null };
+    assignees?: {
+      previous?: GitlabWebhookUser[];
+      current?: GitlabWebhookUser[];
+    };
     labels?: {
       previous?: GitlabWebhookLabel[];
       current?: GitlabWebhookLabel[];
@@ -58,10 +64,9 @@ export async function handleGitlabIssueUpdated(
 
   const touchedText = Boolean(changes?.title || changes?.description);
   const touchedLabels = Boolean(changes?.labels || payload.labels);
+  const touchedAssignees = Boolean(changes?.assignees || payload.assignees);
 
-  if (!touchedText && !touchedLabels) {
-    return;
-  }
+  if (!touchedText && !touchedLabels && !touchedAssignees) return;
 
   const baseUrl = baseUrlFromProjectWebUrl(
     project.web_url,
@@ -74,7 +79,6 @@ export async function handleGitlabIssueUpdated(
     project.path_with_namespace,
     integrationId,
   );
-
   const currentLabels = payload.labels ?? changes?.labels?.current;
 
   for (const integration of integrations) {
@@ -84,24 +88,46 @@ export async function handleGitlabIssueUpdated(
         "issue",
         issue.iid.toString(),
       );
-
-      if (!externalLink) {
-        continue;
-      }
+      if (!externalLink) continue;
 
       const task = await db.query.taskTable.findFirst({
         where: eq(taskTable.id, externalLink.taskId),
         with: { project: true },
       });
+      if (!task) continue;
 
-      if (!task) {
-        continue;
-      }
-
+      const config = JSON.parse(integration.config) as GitlabConfig;
       let metadata: LinkMetadata = parseLinkSyncMetadata(
         externalLink.metadata,
         { externalLinkId: externalLink.id, field: "issue" },
       );
+
+      if (touchedAssignees && config.gitlabOwnsAssignees) {
+        const assignees =
+          payload.assignees ?? changes?.assignees?.current ?? [];
+        const gitlabAssignees = snapshotGitlabAssignees(assignees);
+        if (
+          JSON.stringify(metadata.gitlabAssignees ?? []) !==
+          JSON.stringify(gitlabAssignees)
+        ) {
+          metadata = { ...metadata, gitlabAssignees };
+          await updateExternalLink(externalLink.id, { metadata });
+          await publishEvent("task.updated", {
+            taskId: task.id,
+            projectId: task.projectId,
+            title: task.title,
+            status: task.status,
+            userId: null,
+          });
+        }
+        if (task.userId !== null) {
+          await db
+            .update(taskTable)
+            .set({ userId: null })
+            .where(eq(taskTable.id, task.id));
+          task.userId = null;
+        }
+      }
 
       if (touchedText) {
         const updateData: Record<string, unknown> = {};
@@ -122,7 +148,6 @@ export async function handleGitlabIssueUpdated(
         }
 
         if (changes?.description) {
-          // Kaneo recorded the body with its footer, so compare the raw body.
           const issueBody = issue.description ?? "";
           if (!isEchoOf(metadata.lastSync?.description, "kaneo", issueBody)) {
             const description = taskDescriptionFromIssue(issue.description);
@@ -142,7 +167,6 @@ export async function handleGitlabIssueUpdated(
             .where(eq(taskTable.id, task.id));
 
           metadata = { ...metadata, lastSync };
-
           await updateExternalLink(externalLink.id, {
             title: issue.title,
             metadata,
@@ -194,7 +218,9 @@ export async function handleGitlabIssueUpdated(
             oldStatus: statusResult.before.status,
             newStatus: statusResult.after.status,
             title: statusResult.after.title,
-            assigneeId: statusResult.after.userId,
+            assigneeId: config.gitlabOwnsAssignees
+              ? null
+              : statusResult.after.userId,
             type: "status_changed",
           });
         }
@@ -203,7 +229,7 @@ export async function handleGitlabIssueUpdated(
       if (task.project?.workspaceId) {
         try {
           await syncGitlabLabelCatalog(
-            JSON.parse(integration.config) as GitlabConfig,
+            config,
             task.projectId,
             task.project.workspaceId,
           );

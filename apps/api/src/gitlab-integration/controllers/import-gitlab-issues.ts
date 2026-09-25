@@ -136,6 +136,19 @@ export async function importGitlabIssues(
     }
   }
 
+  try {
+    await syncGitlabSubtaskRelations(
+      projectId,
+      integration.id,
+      config.projectPath,
+      client,
+      allIssues.map((issue) => issue.iid),
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`Subtask relations: ${message}`);
+  }
+
   const allMergeRequests: GitlabMergeRequest[] = [];
   for (let page = 1; page <= MAX_PAGES; page++) {
     const mergeRequests = await client.listMergeRequests(

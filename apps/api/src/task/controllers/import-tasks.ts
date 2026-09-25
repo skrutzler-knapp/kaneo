@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, projectTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { assertKaneoCanChangeAssignee } from "../../plugins/gitlab/utils/assignee-sync";
 import { filterAssignableUsers } from "../../utils/assert-assignable-user";
 import {
   coercePriority,
@@ -43,6 +44,10 @@ async function importTasks(
         .filter((id): id is string => Boolean(id)),
     ),
   ];
+
+  if (assigneeIds.length > 0) {
+    await assertKaneoCanChangeAssignee(projectId);
+  }
 
   const assignableIds = await filterAssignableUsers(
     assigneeIds,

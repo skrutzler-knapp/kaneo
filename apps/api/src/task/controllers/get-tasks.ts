@@ -14,11 +14,17 @@ import { HTTPException } from "hono/http-exception";
 import {
   columnTable,
   externalLinkTable,
+  integrationTable,
   labelTable,
   projectTable,
   taskTable,
   userTable,
 } from "../../database/schema";
+import {
+  gitlabAssigneeDisplay,
+  gitlabOwnsAssignees,
+  readGitlabAssignees,
+} from "../../plugins/gitlab/utils/assignee-sync";
 import { boundedTaskRead, type TaskReadDatabase } from "../bounded-read";
 import {
   boardDescription,
@@ -199,8 +205,26 @@ async function getTasksPage(
   const externalLinksData =
     taskIds.length > 0
       ? await db
-          .select()
+          .select({
+            id: externalLinkTable.id,
+            taskId: externalLinkTable.taskId,
+            integrationId: externalLinkTable.integrationId,
+            resourceType: externalLinkTable.resourceType,
+            externalId: externalLinkTable.externalId,
+            url: externalLinkTable.url,
+            title: externalLinkTable.title,
+            metadata: externalLinkTable.metadata,
+            createdAt: externalLinkTable.createdAt,
+            updatedAt: externalLinkTable.updatedAt,
+            integrationType: integrationTable.type,
+            integrationIsActive: integrationTable.isActive,
+            integrationConfig: integrationTable.config,
+          })
           .from(externalLinkTable)
+          .innerJoin(
+            integrationTable,
+            eq(externalLinkTable.integrationId, integrationTable.id),
+          )
           .where(inArray(externalLinkTable.taskId, taskIds))
           .orderBy(asc(externalLinkTable.id))
           .limit(relatedPageSize)
@@ -239,15 +263,58 @@ async function getTasksPage(
       updatedAt: Date;
     }>
   >();
+  const gitlabAssigneesByTaskId = new Map<
+    string,
+    ReturnType<typeof readGitlabAssignees>
+  >();
   for (const externalLink of externalLinksData) {
+    const parsedMetadata = parseMetadata(externalLink.metadata);
+    if (
+      externalLink.resourceType === "issue" &&
+      externalLink.integrationType === "gitlab" &&
+      externalLink.integrationIsActive === true &&
+      gitlabOwnsAssignees(externalLink.integrationConfig)
+    ) {
+      gitlabAssigneesByTaskId.set(
+        externalLink.taskId,
+        readGitlabAssignees(JSON.stringify(parsedMetadata ?? {})),
+      );
+    }
+
     if (!taskExternalLinksMap.has(externalLink.taskId)) {
       taskExternalLinksMap.set(externalLink.taskId, []);
     }
     taskExternalLinksMap.get(externalLink.taskId)?.push({
-      ...externalLink,
-      metadata: parseMetadata(externalLink.metadata),
+      id: externalLink.id,
+      taskId: externalLink.taskId,
+      integrationId: externalLink.integrationId,
+      resourceType: externalLink.resourceType,
+      externalId: externalLink.externalId,
+      url: externalLink.url,
+      title: externalLink.title,
+      metadata: parsedMetadata,
+      createdAt: externalLink.createdAt,
+      updatedAt: externalLink.updatedAt,
     });
   }
+
+  const addTaskMetadata = (task: (typeof paginatedTasks)[number]) => {
+    const isGitlabManaged = gitlabAssigneesByTaskId.has(task.id);
+    const gitlabAssignees = gitlabAssigneesByTaskId.get(task.id) ?? [];
+    return {
+      ...task,
+      subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
+      ...(isGitlabManaged
+        ? {
+            userId: null,
+            assigneeId: null,
+            ...gitlabAssigneeDisplay(gitlabAssignees),
+          }
+        : {}),
+      labels: taskLabelsMap.get(task.id) || [],
+      externalLinks: taskExternalLinksMap.get(task.id) || [],
+    };
+  };
 
   const projectColumns = await db
     .select()
@@ -313,31 +380,16 @@ async function getTasksPage(
     isFinal: column.isFinal,
     tasks: paginatedTasks
       .filter((task) => task.status === column.slug)
-      .map((task) => ({
-        ...task,
-        subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
-        labels: taskLabelsMap.get(task.id) || [],
-        externalLinks: taskExternalLinksMap.get(task.id) || [],
-      })),
+      .map(addTaskMetadata),
   }));
 
   const archivedTasks = paginatedTasks
     .filter((task) => task.status === "archived")
-    .map((task) => ({
-      ...task,
-      subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
-      labels: taskLabelsMap.get(task.id) || [],
-      externalLinks: taskExternalLinksMap.get(task.id) || [],
-    }));
+    .map(addTaskMetadata);
 
   const plannedTasks = paginatedTasks
     .filter((task) => task.status === "planned")
-    .map((task) => ({
-      ...task,
-      subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
-      labels: taskLabelsMap.get(task.id) || [],
-      externalLinks: taskExternalLinksMap.get(task.id) || [],
-    }));
+    .map(addTaskMetadata);
 
   return {
     data: {
