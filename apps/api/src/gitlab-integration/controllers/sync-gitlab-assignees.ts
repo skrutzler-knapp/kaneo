@@ -8,15 +8,12 @@ import {
 import { publishEvent } from "../../events";
 import { updateExternalLink } from "../../plugins/github/services/link-manager";
 import type { GitlabConfig } from "../../plugins/gitlab/config";
+import { createGitlabClient, type GitlabIssue } from "../../plugins/gitlab/utils/gitlab-api";
 import {
   mergeGitlabAssigneesMetadata,
   readGitlabAssignees,
   snapshotGitlabAssignees,
 } from "../../plugins/gitlab/utils/assignee-sync";
-import {
-  createGitlabClient,
-  type GitlabIssue,
-} from "../../plugins/gitlab/utils/gitlab-api";
 import type { GitlabWebhookUser } from "../../plugins/gitlab/utils/payload";
 
 const PER_PAGE = 100;
@@ -90,7 +87,7 @@ export async function syncGitlabAssigneesForImportedIssues(
   const client = createGitlabClient(config);
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const issues = await client.listIssues(config.projectPath, page, "opened");
+    const issues = await client.listIssues(config.projectPath, page, "all");
     if (issues.length === 0) break;
 
     for (const issue of issues) {
