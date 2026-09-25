@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import db from "../../../database";
-import { externalLinkTable } from "../../../database/schema";
+import { externalLinkTable, taskRelationTable } from "../../../database/schema";
 
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -79,6 +79,22 @@ export async function findExternalLinksByTask(taskId: string) {
     where: eq(externalLinkTable.taskId, taskId),
     with: {
       integration: true,
+    },
+  });
+}
+
+export async function findSubtaskRelationsByTask(taskId: string) {
+  return db.query.taskRelationTable.findMany({
+    where: and(
+      eq(taskRelationTable.relationType, "subtask"),
+      or(
+        eq(taskRelationTable.sourceTaskId, taskId),
+        eq(taskRelationTable.targetTaskId, taskId),
+      ),
+    ),
+    columns: {
+      sourceTaskId: true,
+      targetTaskId: true,
     },
   });
 }

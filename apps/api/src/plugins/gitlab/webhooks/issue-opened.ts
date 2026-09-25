@@ -26,6 +26,8 @@ import { labelTitles } from "../utils/payload";
 import { resolveTargetStatus } from "../utils/resolve-column";
 import { withSyncedNoteId } from "../utils/synced-notes";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
+import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
+import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
 
 type IssueOpenedPayload = {
   user?: GitlabWebhookUser | null;
@@ -172,6 +174,23 @@ export async function handleGitlabIssueOpened(
     if (!kaneoProject) {
       continue;
     }
+
+    try {
+      await syncGitlabLabelCatalog(
+        config,
+        projectId,
+        kaneoProject.workspaceId,
+      );
+    } catch (error) {
+      console.error("Failed to sync GitLab label catalog:", error);
+    }
+
+    await syncGitlabLabelsToTask(
+      createdTask.id,
+      projectId,
+      kaneoProject.workspaceId,
+      payload.labels,
+    );
 
     const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
     const taskUrl = `${clientUrl}/dashboard/workspace/${kaneoProject.workspaceId}/project/${projectId}/task/${createdTask.id}`;

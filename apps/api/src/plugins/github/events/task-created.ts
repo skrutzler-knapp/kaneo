@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import db from "../../../database";
 import { projectTable } from "../../../database/schema";
 import type { PluginContext, TaskCreatedEvent } from "../../types";
+import { getCustomTaskLabelNames } from "../../task-labels";
 import { type GitHubConfig, hasVerifiedGitHubBinding } from "../config";
 import {
   createExternalLink,
@@ -72,6 +73,15 @@ export async function handleTaskCreated(
         createdFrom: "kaneo",
       },
     });
+
+    const taskLabels = await getCustomTaskLabelNames(event.taskId);
+    await addLabelsToIssue(
+      octokit,
+      repositoryOwner,
+      repositoryName,
+      createdIssue.data.number,
+      taskLabels,
+    );
 
     if (config.commentTaskLinkOnGitHubIssue !== false) {
       const project = await db.query.projectTable.findFirst({

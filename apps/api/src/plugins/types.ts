@@ -102,6 +102,14 @@ export type TaskUnassignedEvent = {
   title: string;
 };
 
+export type TaskRelationCreatedEvent = {
+  sourceTaskId: string;
+  targetTaskId: string;
+  relationType: string;
+  projectId: string;
+  source?: "kaneo" | "gitlab";
+};
+
 export type TaskEvent =
   | TaskCreatedEvent
   | TaskStatusChangedEvent
@@ -113,7 +121,8 @@ export type TaskEvent =
   | TaskMovedEvent
   | TaskDueDateChangedEvent
   | TaskAssigneeChangedEvent
-  | TaskUnassignedEvent;
+  | TaskUnassignedEvent
+  | TaskRelationCreatedEvent;
 
 export type ExternalMetadata = {
   type: "issue" | "pull_request" | "branch";
@@ -159,6 +168,7 @@ export type IntegrationPlugin = {
   onTaskDueDateChanged?: TaskEventHandler<TaskDueDateChangedEvent>;
   onTaskAssigneeChanged?: TaskEventHandler<TaskAssigneeChangedEvent>;
   onTaskUnassigned?: TaskEventHandler<TaskUnassignedEvent>;
+  onTaskRelationCreated?: TaskEventHandler<TaskRelationCreatedEvent>;
 
   handleWebhook?: WebhookHandler;
   getTaskMetadata?: MetadataProvider;

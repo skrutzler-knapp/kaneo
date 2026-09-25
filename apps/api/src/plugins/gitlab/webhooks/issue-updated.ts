@@ -1,6 +1,6 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import db from "../../../database";
-import { labelTable, taskTable } from "../../../database/schema";
+import { taskTable } from "../../../database/schema";
 import { publishEvent } from "../../../events";
 import {
   findExternalLink,
@@ -22,8 +22,10 @@ import type {
   GitlabWebhookLabel,
   GitlabWebhookProject,
 } from "../utils/payload";
-import { labelColor, labelTitles } from "../utils/payload";
-import { isSystemLabelName } from "../utils/system-labels";
+import { labelTitles } from "../utils/payload";
+import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
+import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import type { GitlabConfig } from "../config";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
 // Edits and label changes arrive together as one "update" action.
@@ -47,78 +49,6 @@ type IssueUpdatedPayload = {
   project: GitlabWebhookProject;
 };
 
-function nonSystemLabels(
-  labels: GitlabWebhookLabel[] | undefined,
-): Array<{ name: string; color: string }> {
-  const out: Array<{ name: string; color: string }> = [];
-  for (const label of labels ?? []) {
-    if (!label.title || isSystemLabelName(label.title)) continue;
-    out.push({ name: label.title, color: labelColor(label) });
-  }
-  return out;
-}
-
-async function syncGitlabLabelsToTask(
-  taskId: string,
-  workspaceId: string,
-  gitlabLabels: Array<{ name: string; color: string }>,
-  previousLabels: GitlabWebhookLabel[] | undefined,
-) {
-  const desiredNames = new Set(gitlabLabels.map((l) => l.name));
-  const existingRows = await db.query.labelTable.findMany({
-    where: eq(labelTable.taskId, taskId),
-  });
-
-  const labelsToInsert = gitlabLabels
-    .filter((g) => !existingRows.some((row) => row.name === g.name))
-    .map((g) => ({
-      name: g.name,
-      color: g.color,
-      taskId,
-      workspaceId,
-    }));
-
-  const colorToIds = new Map<string, string[]>();
-  for (const g of gitlabLabels) {
-    const row = existingRows.find((r) => r.name === g.name);
-    if (!row) continue;
-    const have = row.color ? `#${row.color.replace(/^#/, "")}` : "#6B7280";
-    if (have === g.color) continue;
-    const list = colorToIds.get(g.color) ?? [];
-    list.push(row.id);
-    colorToIds.set(g.color, list);
-  }
-
-  for (const [color, ids] of colorToIds) {
-    await db
-      .update(labelTable)
-      .set({ color })
-      .where(inArray(labelTable.id, ids));
-  }
-
-  if (labelsToInsert.length > 0) {
-    await db
-      .insert(labelTable)
-      .values(labelsToInsert)
-      .onConflictDoNothing({
-        target: [labelTable.taskId, labelTable.name],
-      });
-  }
-
-  // Absence from GitLab alone does not imply removal: local labels may not
-  // have synced yet. Only delete names explicitly removed by this event.
-  const previousNames = new Set(
-    nonSystemLabels(previousLabels).map((label) => label.name),
-  );
-  const labelsToDelete = existingRows
-    .filter((row) => previousNames.has(row.name) && !desiredNames.has(row.name))
-    .map((row) => row.id);
-
-  if (labelsToDelete.length > 0) {
-    await db.delete(labelTable).where(inArray(labelTable.id, labelsToDelete));
-  }
-}
-
 export async function handleGitlabIssueUpdated(
   payload: IssueUpdatedPayload,
   integrationId?: string,
@@ -127,7 +57,7 @@ export async function handleGitlabIssueUpdated(
   const { project, changes } = payload;
 
   const touchedText = Boolean(changes?.title || changes?.description);
-  const touchedLabels = Boolean(changes?.labels);
+  const touchedLabels = Boolean(changes?.labels || payload.labels);
 
   if (!touchedText && !touchedLabels) {
     return;
@@ -145,7 +75,7 @@ export async function handleGitlabIssueUpdated(
     integrationId,
   );
 
-  const currentLabels = changes?.labels?.current ?? payload.labels;
+  const currentLabels = payload.labels ?? changes?.labels?.current;
 
   for (const integration of integrations) {
     try {
@@ -180,6 +110,7 @@ export async function handleGitlabIssueUpdated(
 
         if (
           changes?.title &&
+          issue.title !== task.title &&
           !isEchoOf(metadata.lastSync?.title, "kaneo", issue.title)
         ) {
           updateData.title = issue.title;
@@ -216,6 +147,16 @@ export async function handleGitlabIssueUpdated(
             title: issue.title,
             metadata,
           });
+
+          if (updateData.title !== undefined) {
+            await publishEvent("task.title_changed", {
+              taskId: task.id,
+              projectId: task.projectId,
+              userId: null,
+              oldTitle: task.title,
+              newTitle: issue.title,
+            });
+          }
         }
       }
 
@@ -260,11 +201,31 @@ export async function handleGitlabIssueUpdated(
       }
 
       if (task.project?.workspaceId) {
+        try {
+          await syncGitlabLabelCatalog(
+            JSON.parse(integration.config) as GitlabConfig,
+            task.projectId,
+            task.project.workspaceId,
+          );
+        } catch (error) {
+          console.error("Failed to sync GitLab label catalog:", error);
+        }
+        const previousLabelNames = new Set(
+          labelTitles(changes?.labels?.previous),
+        );
+        const currentChangedLabelNames = new Set(
+          labelTitles(changes?.labels?.current),
+        );
+        const removedLabelNames = [...previousLabelNames].filter(
+          (name) => !currentChangedLabelNames.has(name),
+        );
+
         await syncGitlabLabelsToTask(
           task.id,
+          task.projectId,
           task.project.workspaceId,
-          nonSystemLabels(currentLabels),
-          changes?.labels?.previous,
+          currentLabels,
+          removedLabelNames,
         );
       }
     } catch (error) {

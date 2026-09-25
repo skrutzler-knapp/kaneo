@@ -8,6 +8,7 @@ import {
   getLabelsForIssue,
 } from "../../github/utils/format";
 import type { PluginContext, TaskCreatedEvent } from "../../types";
+import { getCustomTaskLabelNames } from "../../task-labels";
 import type { GiteaConfig } from "../config";
 import { createGiteaClient } from "../utils/gitea-api";
 import { addLabelsToIssueGitea } from "../utils/labels";
@@ -58,7 +59,11 @@ export async function handleTaskCreated(
       },
     });
 
-    const labels = getLabelsForIssue(event.priority, event.status);
+    const taskLabels = await getCustomTaskLabelNames(event.taskId);
+    const labels = [
+      ...getLabelsForIssue(event.priority, event.status),
+      ...taskLabels,
+    ];
     await addLabelsToIssueGitea(config, createdIssue.number, labels);
   } catch (error) {
     console.error("Failed to create Gitea issue:", error);
