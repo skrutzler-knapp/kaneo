@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import updateTaskStatus from "@/fetchers/task/update-task-status";
+import { updateTaskRelationStatusCaches } from "@/lib/task-relation-cache";
 import type Task from "@/types/task";
 
 export function useUpdateTaskStatus() {
@@ -8,6 +9,11 @@ export function useUpdateTaskStatus() {
   return useMutation({
     mutationFn: (task: Task) => updateTaskStatus(task.id, task),
     onSuccess: (_, variables) => {
+      updateTaskRelationStatusCaches(
+        queryClient,
+        variables.id,
+        variables.status,
+      );
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });
