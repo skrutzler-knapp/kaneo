@@ -15,6 +15,7 @@ import {
 import { publishEvent } from "../../events";
 import { removeLabelFromGitea } from "../../plugins/gitea/utils/sync-label-to-gitea";
 import { removeLabelFromGitHub } from "../../plugins/github/utils/sync-label-to-github";
+import { assertKaneoCanChangeAssignee } from "../../plugins/gitlab/utils/assignee-sync";
 import { removeLabelFromGitlab } from "../../plugins/gitlab/utils/sync-label-to-gitlab";
 import { assertAssignableUser } from "../../utils/assert-assignable-user";
 import { publishTaskMutation } from "./task-mutation-effects";
@@ -244,6 +245,10 @@ async function bulkUpdateTasks({
 
     case "updateAssignee": {
       const assigneeId = value?.trim() || null;
+
+      for (const projectId of new Set(tasks.map((task) => task.projectId))) {
+        await assertKaneoCanChangeAssignee(projectId);
+      }
 
       if (assigneeId) {
         await assertAssignableUser(

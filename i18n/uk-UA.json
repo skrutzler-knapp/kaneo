@@ -1752,7 +1752,10 @@
 			"webhookShow": "Show",
 			"webhookTitle": "Webhook",
 			"loadProjectsError": "Failed to load projects",
-			"importPermissionHint": "Importing requires permission to create and update tasks."
+			"importPermissionHint": "Importing requires permission to create and update tasks.",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

@@ -18,7 +18,9 @@ import {
   extractIssuePriority,
   extractIssueStatus,
 } from "../../github/utils/extract-priority";
+import type { GitlabConfig } from "../config";
 import { findAllIntegrationsByGitlabProject } from "../services/integration-lookup";
+import { snapshotGitlabAssignees } from "../utils/assignee-sync";
 import { taskDescriptionFromIssue } from "../utils/issue-description";
 import {
   isEchoOf,
@@ -28,14 +30,13 @@ import {
 import type {
   GitlabWebhookLabel,
   GitlabWebhookProject,
+  GitlabWebhookUser,
 } from "../utils/payload";
 import { labelColor, labelTitles } from "../utils/payload";
 import { isSystemLabelName } from "../utils/system-labels";
 import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
-import type { GitlabConfig } from "../config";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
-// Edits and label changes arrive together as one "update" action.
 type IssueUpdatedPayload = {
   object_attributes: {
     iid: number;
@@ -45,10 +46,15 @@ type IssueUpdatedPayload = {
     url: string;
     action?: string;
   };
+  assignees?: GitlabWebhookUser[];
   labels?: GitlabWebhookLabel[];
   changes?: {
     title?: { previous?: string | null; current?: string | null };
     description?: { previous?: string | null; current?: string | null };
+    assignees?: {
+      previous?: GitlabWebhookUser[];
+      current?: GitlabWebhookUser[];
+    };
     labels?: {
       previous?: GitlabWebhookLabel[];
       current?: GitlabWebhookLabel[];
@@ -150,10 +156,9 @@ export async function handleGitlabIssueUpdated(
 
   const touchedText = Boolean(changes?.title || changes?.description);
   const touchedLabels = Boolean(changes?.labels || payload.labels);
+  const touchedAssignees = Boolean(changes?.assignees || payload.assignees);
 
-  if (!touchedText && !touchedLabels) {
-    return;
-  }
+  if (!touchedText && !touchedLabels && !touchedAssignees) return;
 
   const baseUrl = baseUrlFromProjectWebUrl(
     project.web_url,
@@ -166,7 +171,6 @@ export async function handleGitlabIssueUpdated(
     project.path_with_namespace,
     integrationId,
   );
-
   const currentLabels = payload.labels ?? changes?.labels?.current;
 
   for (const integration of integrations) {
@@ -208,6 +212,17 @@ export async function handleGitlabIssueUpdated(
             externalLink.metadata,
             { externalLinkId: externalLink.id, field: "issue" },
           );
+          const config = JSON.parse(integration.config) as GitlabConfig;
+          if (touchedAssignees && config.gitlabOwnsAssignees) {
+            const gitlabAssignees = snapshotGitlabAssignees(payload.assignees ?? changes?.assignees?.current);
+            metadata = { ...metadata, gitlabAssignees };
+            await updateExternalLink(externalLink.id, { metadata: { gitlabAssignees } }, db);
+            if (task.userId) {
+              await db.update(taskTable).set({ userId: null }).where(linkedTaskScope(task.id, integration.projectId));
+              task.userId = null;
+            }
+            afterCommit(() => publishEvent("task.updated", { taskId: task.id, projectId: task.projectId }));
+          }
 
           if (touchedText) {
             const updateData: Record<string, unknown> = {};

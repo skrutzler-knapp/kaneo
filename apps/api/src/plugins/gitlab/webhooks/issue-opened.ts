@@ -23,6 +23,7 @@ import {
 } from "../../github/utils/extract-priority";
 import type { GitlabConfig } from "../config";
 import { findAllIntegrationsByGitlabProject } from "../services/integration-lookup";
+import { snapshotGitlabAssignees } from "../utils/assignee-sync";
 import { createGitlabClient } from "../utils/gitlab-api";
 import { taskDescriptionFromIssue } from "../utils/issue-description";
 import { addLabelsToIssueGitlab } from "../utils/labels";
@@ -33,10 +34,10 @@ import type {
 } from "../utils/payload";
 import { labelTitles } from "../utils/payload";
 import { resolveTargetStatus } from "../utils/resolve-column";
+import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
 import { withSyncedNoteId } from "../utils/synced-notes";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
-import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
-import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
 
 type IssueOpenedPayload = {
   user?: GitlabWebhookUser | null;
@@ -49,6 +50,7 @@ type IssueOpenedPayload = {
     action?: string;
     confidential?: boolean;
   };
+  assignees?: GitlabWebhookUser[];
   labels?: GitlabWebhookLabel[];
   project: GitlabWebhookProject;
 };
@@ -60,28 +62,20 @@ export async function handleGitlabIssueOpened(
   const issue = payload.object_attributes;
   const { project } = payload;
 
-  // Confidential issues are visible only to project members in GitLab.
-  if (issue.confidential) {
-    return;
-  }
+  if (issue.confidential) return;
 
   const baseUrl = baseUrlFromProjectWebUrl(
     project.web_url,
     project.path_with_namespace,
   );
-  if (!baseUrl) {
-    return;
-  }
+  if (!baseUrl) return;
 
   const integrations = await findAllIntegrationsByGitlabProject(
     baseUrl,
     project.path_with_namespace,
     integrationId,
   );
-
-  if (integrations.length === 0) {
-    return;
-  }
+  if (integrations.length === 0) return;
 
   const existingLabels = labelTitles(payload.labels);
   const author = payload.user?.username ?? payload.user?.name;
@@ -98,11 +92,17 @@ export async function handleGitlabIssueOpened(
       });
       continue;
     }
+
     const projectId = integration.projectId;
     const closed = issue.state === "closed";
+    const kaneoProject = await db.query.projectTable.findFirst({ where: eq(projectTable.id, projectId) });
+    if (!kaneoProject) continue;
 
     const priority = extractIssuePriority(existingLabels);
     const status = extractIssueStatus(existingLabels);
+    const gitlabAssignees = config.gitlabOwnsAssignees
+      ? snapshotGitlabAssignees(payload.assignees)
+      : undefined;
 
     const result = await db.transaction(async (tx) => {
       const [current] = await tx
@@ -159,6 +159,7 @@ export async function handleGitlabIssueOpened(
         state: closed ? "closed" : "opened",
         createdFrom: "gitlab",
         author: author,
+        ...(gitlabAssignees ? { gitlabAssignees } : {}),
       };
       const link = await createExternalLink(
         {
@@ -214,20 +215,8 @@ export async function handleGitlabIssueOpened(
       integration.config,
     );
 
-    const kaneoProject = await db.query.projectTable.findFirst({
-      where: eq(projectTable.id, projectId),
-    });
-
-    if (!kaneoProject) {
-      continue;
-    }
-
     try {
-      await syncGitlabLabelCatalog(
-        config,
-        projectId,
-        kaneoProject.workspaceId,
-      );
+      await syncGitlabLabelCatalog(config, projectId, kaneoProject.workspaceId);
     } catch (error) {
       console.error("Failed to sync GitLab label catalog:", error);
     }
@@ -245,15 +234,12 @@ export async function handleGitlabIssueOpened(
 
     try {
       const labelsToAdd: string[] = [];
-
       if (priority && !existingLabels.includes(`priority:${priority}`)) {
         labelsToAdd.push(`priority:${priority}`);
       }
-
       if (status && !existingLabels.includes(`status:${status}`)) {
         labelsToAdd.push(`status:${status}`);
       }
-
       if (labelsToAdd.length > 0) {
         await addLabelsToIssueGitlab(
           config,
@@ -272,7 +258,6 @@ export async function handleGitlabIssueOpened(
             `[${taskIdentifier}](${taskUrl})`,
           ),
         );
-
         await updateExternalLink(issueLink.id, {
           metadata: {
             ...linkMetadata,

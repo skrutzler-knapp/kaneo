@@ -44,6 +44,7 @@ async function getGitlabIntegration(projectId: string, includeSecrets = false) {
     webhookSecret: includeSecrets ? (config.webhookSecret ?? "") : "",
     branchPattern: config.branchPattern || defaultGitlabConfig.branchPattern,
     commentTaskLinkOnGitlabIssue: config.commentTaskLinkOnGitlabIssue !== false,
+    gitlabOwnsAssignees: config.gitlabOwnsAssignees === true,
     isActive: integration.isActive,
     createdAt: integration.createdAt,
     updatedAt: integration.updatedAt,

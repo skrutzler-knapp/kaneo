@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import { withLockedTask } from "./with-locked-task";
 import { taskTable } from "../../database/schema";
 import { publishTaskMutation } from "./task-mutation-effects";
+import { assertKaneoCanChangeAssignee } from "../../plugins/gitlab/utils/assignee-sync";
 import {
   assertAssignableUser,
   getProjectWorkspaceId,
@@ -24,6 +25,7 @@ async function updateTaskAssignee({
       if (existingTask.userId === nextAssigneeId) {
         return existingTask;
       }
+      await assertKaneoCanChangeAssignee(existingTask.projectId);
 
       if (nextAssigneeId) {
         await assertAssignableUser(

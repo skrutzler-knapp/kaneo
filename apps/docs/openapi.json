@@ -167,6 +167,12 @@
               "null"
             ]
           },
+          "assigneeUsername": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "assigneeId": {
             "type": [
               "string",
@@ -1246,7 +1252,19 @@
                   "null"
                 ]
               },
+              "assigneeUsername": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "assigneeId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "assigneeImage": {
                 "type": [
                   "string",
                   "null"
@@ -1256,7 +1274,8 @@
             "required": [
               "columnId",
               "assigneeName",
-              "assigneeId"
+              "assigneeId",
+              "assigneeImage"
             ]
           }
         ]
@@ -3405,6 +3424,10 @@
             "type": "boolean",
             "description": "When on, Kaneo comments a link back to the task on each issue opened in GitLab. Issues Kaneo creates from tasks are not commented on."
           },
+          "gitlabOwnsAssignees": {
+            "type": "boolean",
+            "description": "When on, GitLab is authoritative for assignees; webhook assignees are matched to workspace members by email and Kaneo-side assignment changes are rejected."
+          },
           "isActive": {
             "type": [
               "boolean",
@@ -3920,6 +3943,18 @@
               "string",
               "null"
             ]
+          },
+          "assigneeUsername": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assigneeImage": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -3931,7 +3966,8 @@
           "number",
           "projectId",
           "userId",
-          "assigneeName"
+          "assigneeName",
+          "assigneeImage"
         ]
       },
       "TaskRelation": {
@@ -10052,7 +10088,7 @@
             }
           },
           "409": {
-            "description": "A selected workspace label is being deleted",
+            "description": "A selected workspace label is being deleted, or assignees are managed by GitLab",
             "content": {
               "text/plain": {
                 "schema": {
@@ -10438,6 +10474,16 @@
           },
           "403": {
             "description": "No workspace access, or missing task:update or task:assign permission",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task assignees are managed by GitLab",
             "content": {
               "text/plain": {
                 "schema": {
@@ -11012,6 +11058,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Task assignees are managed by GitLab",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -11363,6 +11419,16 @@
           },
           "404": {
             "description": "Task not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task assignees are managed by GitLab",
             "content": {
               "text/plain": {
                 "schema": {
@@ -16377,6 +16443,9 @@
                     "type": "boolean"
                   },
                   "commentTaskLinkOnGitlabIssue": {
+                    "type": "boolean"
+                  },
+                  "gitlabOwnsAssignees": {
                     "type": "boolean"
                   }
                 }

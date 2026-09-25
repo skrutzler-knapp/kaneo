@@ -29,6 +29,7 @@ import { moveBoardTask } from "./move-task";
 import { useDragPreview } from "./drag-preview/use-drag-preview";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useGetProjectTaskRelations from "@/hooks/queries/task-relation/use-get-project-task-relations";
+import type { ProjectTaskRelation } from "@/fetchers/task-relation/get-project-task-relations";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useProjectBackground } from "@/hooks/use-project-background";
 import { cn } from "@/lib/cn";

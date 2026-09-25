@@ -11,6 +11,7 @@ import {
 import { ShortcutNumber } from "@/components/ui/shortcut-number";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
 import useGetMembersOfProjects from "@/hooks/queries/workspace-users/use-get-members-of-projects";
+import useGitlabAssigneeOwnership from "@/hooks/use-gitlab-assignee-ownership";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { getInitials } from "@/lib/get-initials";
@@ -37,6 +38,7 @@ export default function SubtaskAssigneePopover({
     INITIAL_VISIBLE_USERS,
   );
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
+  const assigneesManagedByGitlab = useGitlabAssigneeOwnership(tasks[0]?.projectId ?? "");
   const { data: projectMembers } = useGetMembersOfProjects({
     workspaceId,
     projectIds: tasks.map((task) => task.projectId),
@@ -59,6 +61,10 @@ export default function SubtaskAssigneePopover({
 
   const handleAssigneeChange = useCallback(
     async (newUserId: string) => {
+      if (assigneesManagedByGitlab) {
+        toast.error(t("settings:gitlabIntegration.assigneeEditLocked"));
+        return;
+      }
       try {
         await Promise.all(
           tasks.map((task) =>
@@ -77,7 +83,7 @@ export default function SubtaskAssigneePopover({
         );
       }
     },
-    [t, tasks, updateTaskAssignee],
+    [assigneesManagedByGitlab, t, tasks, updateTaskAssignee],
   );
 
   const shortcutOptions = useMemo(() => {
@@ -92,12 +98,18 @@ export default function SubtaskAssigneePopover({
     return usersOptions?.slice(0, visibleUsersCount) ?? [];
   }, [usersOptions, visibleUsersCount]);
 
-  const handleOpenChange = useCallback((nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (nextOpen) {
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (nextOpen && assigneesManagedByGitlab) {
+        toast.error(t("settings:gitlabIntegration.assigneeEditLocked"));
+        return;
+      }
+      setOpen(nextOpen);
+      if (!nextOpen) return;
       setVisibleUsersCount(INITIAL_VISIBLE_USERS);
-    }
-  }, []);
+    },
+    [assigneesManagedByGitlab, t],
+  );
 
   const handleListScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {

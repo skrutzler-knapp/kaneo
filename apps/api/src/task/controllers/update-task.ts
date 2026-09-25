@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, projectTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { assertKaneoCanChangeAssignee } from "../../plugins/gitlab/utils/assignee-sync";
 import {
   publishTaskMutation,
   recordTaskMutation,
@@ -61,11 +62,13 @@ async function updateTask(
 
   await assertValidTaskStatus(status, projectId);
 
-  const normalizedUserId = userId?.trim() || undefined;
+  const nextAssigneeId =
+    userId === undefined ? existingTask.userId : userId.trim() || null;
 
-  if (normalizedUserId && normalizedUserId !== existingTask.userId) {
+  if (nextAssigneeId !== existingTask.userId) await assertKaneoCanChangeAssignee(projectId);
+  if (nextAssigneeId && nextAssigneeId !== existingTask.userId) {
     await assertAssignableUser(
-      normalizedUserId,
+      nextAssigneeId,
       await getProjectWorkspaceId(projectId),
       projectId,
     );
@@ -127,7 +130,7 @@ async function updateTask(
         description,
         priority,
         position,
-        userId: normalizedUserId ?? null,
+        userId: userId === undefined ? locked.userId : nextAssigneeId,
       })
       .where(and(eq(taskTable.id, id), eq(taskTable.projectId, projectId)))
       .returning({
