@@ -14,6 +14,7 @@ import type {
   TaskDueDateChangedEvent,
   TaskMovedEvent,
   TaskPriorityChangedEvent,
+  TaskRelationCreatedEvent,
   TaskStatusChangedEvent,
   TaskTitleChangedEvent,
   TaskUnassignedEvent,
@@ -56,6 +57,13 @@ export function initializeEventSubscriptions(): void {
       number: data.number,
     });
   });
+
+  subscribeToEvent<TaskRelationCreatedEvent>(
+    "task-relation.created",
+    async (data) => {
+      await broadcastTaskRelationCreated(data);
+    },
+  );
 
   subscribeToEvent<{
     taskId: string;
@@ -282,6 +290,27 @@ async function getActiveIntegrations(projectId: string) {
       project: true,
     },
   });
+}
+
+export async function broadcastTaskRelationCreated(
+  event: TaskRelationCreatedEvent,
+): Promise<void> {
+  if (event.source === "gitlab") return;
+
+  const integrations = await getActiveIntegrations(event.projectId);
+  for (const integration of integrations) {
+    const plugin = getPlugin(integration.type);
+    if (!plugin?.onTaskRelationCreated) continue;
+
+    try {
+      await plugin.onTaskRelationCreated(event, createContext(integration));
+    } catch (error) {
+      console.error(
+        `Plugin ${plugin.type} error on task-relation.created:`,
+        error,
+      );
+    }
+  }
 }
 
 function createContext(integration: {

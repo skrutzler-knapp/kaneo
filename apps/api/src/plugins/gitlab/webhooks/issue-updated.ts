@@ -31,6 +31,8 @@ import type {
 } from "../utils/payload";
 import { labelColor, labelTitles } from "../utils/payload";
 import { isSystemLabelName } from "../utils/system-labels";
+import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import type { GitlabConfig } from "../config";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
 // Edits and label changes arrive together as one "update" action.
@@ -147,7 +149,7 @@ export async function handleGitlabIssueUpdated(
   const { project, changes } = payload;
 
   const touchedText = Boolean(changes?.title || changes?.description);
-  const touchedLabels = Boolean(changes?.labels);
+  const touchedLabels = Boolean(changes?.labels || payload.labels);
 
   if (!touchedText && !touchedLabels) {
     return;
@@ -165,7 +167,7 @@ export async function handleGitlabIssueUpdated(
     integrationId,
   );
 
-  const currentLabels = changes?.labels?.current ?? payload.labels;
+  const currentLabels = payload.labels ?? changes?.labels?.current;
 
   for (const integration of integrations) {
     try {
@@ -323,6 +325,14 @@ export async function handleGitlabIssueUpdated(
           }
 
           if (task.project?.workspaceId) {
+            const workspaceId = task.project.workspaceId;
+            afterCommit(async () => {
+              try {
+                await syncGitlabLabelCatalog(JSON.parse(integration.config) as GitlabConfig, task.projectId, workspaceId);
+              } catch (error) {
+                console.error("Failed to sync GitLab label catalog:", error);
+              }
+            });
             await syncGitlabLabelsToTask(
               task.id,
               task.project.workspaceId,

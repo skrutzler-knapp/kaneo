@@ -9,12 +9,52 @@ import {
   createExternalLink,
   updateExternalLink,
   findExternalLinkByTaskAndType,
+  findSubtaskRelationsByTask,
 } from "../../github/services/link-manager";
 import { formatIssueBody, formatIssueTitle } from "../../github/utils/format";
 import type { PluginContext, TaskCreatedEvent } from "../../types";
 import type { GitlabConfig } from "../config";
 import { createGitlabClient } from "../utils/gitlab-api";
 import { updateIssueLabelsGitlab } from "../utils/labels";
+import {
+  createRelatedIssueLink,
+  isUnsupportedGitlabHierarchyParent,
+} from "../utils/create-related-issue-link";
+import { syncTaskLabelsToGitlab } from "../utils/sync-task-labels-to-gitlab";
+import { setGitlabSubtaskParent } from "../utils/set-subtask-parent";
+
+async function syncSubtaskRelations(taskId: string, context: PluginContext) {
+  const relations = await findSubtaskRelationsByTask(taskId);
+  const config = context.config as GitlabConfig;
+  for (const relation of relations) {
+    const [parentLink, childLink] = await Promise.all([
+      findExternalLinkByTaskAndType(
+        relation.sourceTaskId,
+        context.integrationId,
+        "issue",
+      ),
+      findExternalLinkByTaskAndType(
+        relation.targetTaskId,
+        context.integrationId,
+        "issue",
+      ),
+    ]);
+    if (!parentLink || !childLink) continue;
+
+    const parentIid = Number(parentLink.externalId);
+    const childIid = Number(childLink.externalId);
+    if (!Number.isSafeInteger(parentIid) || !Number.isSafeInteger(childIid)) {
+      continue;
+    }
+
+    try {
+      await setGitlabSubtaskParent(config, parentIid, childIid);
+    } catch (error) {
+      if (!isUnsupportedGitlabHierarchyParent(error)) throw error;
+      await createRelatedIssueLink(config, parentIid, childIid);
+    }
+  }
+}
 
 async function createTaskIssue(
   event: TaskCreatedEvent,
@@ -31,9 +71,17 @@ async function createTaskIssue(
     "issue",
   );
 
-  if (existingLink && !isIssueInitializationPending(existingLink)) return;
+  if (existingLink && !isIssueInitializationPending(existingLink)) {
+    await syncTaskLabelsToGitlab(config, event.taskId, Number(existingLink.externalId));
+    await syncSubtaskRelations(event.taskId, context);
+    return;
+  }
 
   try {
+    const relations = await findSubtaskRelationsByTask(event.taskId);
+    const isSubtask = relations.some(
+      (relation) => relation.targetTaskId === event.taskId,
+    );
     const client = createGitlabClient(config);
     if (
       !(await canSyncTask(
@@ -52,6 +100,7 @@ async function createTaskIssue(
       const createdIssue = await client.createIssue(config.projectPath, {
         title: formatIssueTitle(event.title),
         description: formatIssueBody(event.description, event.taskId),
+        ...(isSubtask ? { issue_type: "task" as const } : {}),
       });
 
       createdLink = await createExternalLink({
@@ -107,8 +156,9 @@ async function createTaskIssue(
             state_event: value === "closed" ? "close" : "reopen",
           })
         )?.updated_at,
-      labels: () =>
-        syncTaskFieldLabels(
+      labels: async () => {
+        await syncTaskLabelsToGitlab(config, event.taskId, issueNumber);
+        return syncTaskFieldLabels(
           event.taskId,
           context,
           { id: createdLink.id, externalId: String(issueNumber) },
@@ -116,10 +166,18 @@ async function createTaskIssue(
           "initialization",
           (changes, write) =>
             updateIssueLabelsGitlab(config, issueNumber, changes, true, write),
-        ),
+        );
+      },
     });
   } catch (error) {
     console.error("Failed to create GitLab issue:", error);
+    return;
+  }
+
+  try {
+    await syncSubtaskRelations(event.taskId, context);
+  } catch (error) {
+    console.error("Failed to sync GitLab subtask relations:", error);
   }
 }
 

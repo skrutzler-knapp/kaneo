@@ -11,8 +11,15 @@ const mocks = vi.hoisted(() => {
     updateExternalLink: vi.fn(),
     updateTaskStatus: vi.fn(),
     publishEvent: vi.fn(),
+    labelInsert: vi.fn(),
+    syncGitlabLabelsToTask: vi.fn(),
+    syncGitlabLabelCatalog: vi.fn(),
     taskFindFirst: vi.fn(),
     db: {
+      insert: () => ({ values: (values: unknown) => {
+        mocks.labelInsert(values);
+        return { onConflictDoNothing: async () => undefined };
+      } }),
       update: () => ({
         set: (values: Record<string, unknown>) => {
           taskUpdates.push(values);
@@ -20,6 +27,7 @@ const mocks = vi.hoisted(() => {
         },
       }),
       query: {
+        labelTable: { findMany: async () => [] },
         taskTable: {
           findFirst: (...args: unknown[]) => mocks.taskFindFirst(...args),
         },
@@ -55,6 +63,22 @@ vi.mock(
   () => ({
     findAllIntegrationsByGitlabProject: (...args: unknown[]) =>
       mocks.findAllIntegrationsByGitlabProject(...args),
+  }),
+);
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-labels-to-task",
+  () => ({
+    syncGitlabLabelsToTask: (...args: unknown[]) =>
+      mocks.syncGitlabLabelsToTask(...args),
+  }),
+);
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-label-catalog",
+  () => ({
+    syncGitlabLabelCatalog: (...args: unknown[]) =>
+      mocks.syncGitlabLabelCatalog(...args),
   }),
 );
 
@@ -168,6 +192,38 @@ describe("handleGitlabIssueUpdated", () => {
 
     expect(mocks.findExternalLink).not.toHaveBeenCalled();
     expect(mocks.taskUpdates).toHaveLength(0);
+  });
+
+  it("uses the complete current GitLab label list rather than the webhook delta", async () => {
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+      metadata: null,
+    });
+    const fullLabels = [
+      { title: "backend", color: "#123456" },
+      { title: "customer-visible", color: "#abcdef" },
+    ];
+
+    await handleGitlabIssueUpdated({
+      ...titleChangedPayload("Old title"),
+      labels: fullLabels,
+      changes: {
+        labels: {
+          previous: [{ title: "backend", color: "#123456" }],
+          current: [{ title: "customer-visible", color: "#abcdef" }],
+        },
+      },
+    });
+
+    expect(mocks.labelInsert).toHaveBeenCalledWith(fullLabels.map((label) => ({
+      name: label.title, color: label.color, taskId: "task-1", workspaceId: "workspace-1",
+    })));
+    expect(mocks.syncGitlabLabelCatalog).toHaveBeenCalledWith(
+      expect.objectContaining({ projectPath: "usekaneo/kaneo" }),
+      "project-1",
+      "workspace-1",
+    );
   });
 });
 

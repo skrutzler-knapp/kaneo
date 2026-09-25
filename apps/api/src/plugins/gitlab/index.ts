@@ -4,6 +4,7 @@ import { handleTaskCommentCreated } from "./events/task-comment-created";
 import { handleTaskCreated } from "./events/task-created";
 import { handleTaskDescriptionChanged } from "./events/task-description-changed";
 import { handleTaskPriorityChanged } from "./events/task-priority-changed";
+import { handleTaskRelationCreated } from "./events/task-relation-created-idempotent";
 import { handleTaskStatusChanged } from "./events/task-status-changed";
 import { handleTaskTitleChanged } from "./events/task-title-changed";
 
@@ -13,6 +14,7 @@ export const gitlabPlugin: IntegrationPlugin = {
   onTaskCreated: handleTaskCreated,
   onTaskStatusChanged: handleTaskStatusChanged,
   onTaskPriorityChanged: handleTaskPriorityChanged,
+  onTaskRelationCreated: handleTaskRelationCreated,
   onTaskTitleChanged: handleTaskTitleChanged,
   onTaskDescriptionChanged: handleTaskDescriptionChanged,
   onTaskCommentCreated: handleTaskCommentCreated,

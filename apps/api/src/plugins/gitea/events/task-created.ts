@@ -12,6 +12,7 @@ import {
 } from "../../github/services/link-manager";
 import { formatIssueBody, formatIssueTitle } from "../../github/utils/format";
 import type { PluginContext, TaskCreatedEvent } from "../../types";
+import { getCustomTaskLabelNames } from "../../task-labels";
 import type { GiteaConfig } from "../config";
 import { createGiteaClient } from "../utils/gitea-api";
 import { addLabelsToIssueGitea, removeLabelGitea } from "../utils/labels";
@@ -119,8 +120,9 @@ async function createTaskIssue(
             },
           )
         )?.updated_at,
-      labels: () =>
-        syncTaskFieldLabels(
+      labels: async () => {
+        await addLabelsToIssueGitea(config, issueNumber, await getCustomTaskLabelNames(event.taskId));
+        return syncTaskFieldLabels(
           event.taskId,
           context,
           { id: createdLink.id, externalId: String(issueNumber) },
@@ -131,7 +133,8 @@ async function createTaskIssue(
               await removeLabelGitea(config, issueNumber, name, write, true);
             await addLabelsToIssueGitea(config, issueNumber, add, true, write);
           },
-        ),
+        );
+      },
     });
   } catch (error) {
     console.error("Failed to create Gitea issue:", error);

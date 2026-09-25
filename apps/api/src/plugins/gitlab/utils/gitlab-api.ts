@@ -34,6 +34,11 @@ export type GitlabIssue = {
   confidential?: boolean;
 };
 
+export type GitlabSubtaskRelation = {
+  parentIid: number;
+  childIid: number;
+};
+
 export type GitlabNote = {
   id: number;
   body: string;
@@ -109,6 +114,62 @@ function authHeaders(token: string, tokenType: GitlabTokenType): HeadersInit {
 }
 
 const GITLAB_FETCH_TIMEOUT_MS = 10_000;
+const WORK_ITEM_HIERARCHY_QUERY = `
+  query GitLabWorkItemHierarchy($fullPath: ID!, $iids: [String!]!) {
+    project(fullPath: $fullPath) {
+      workItems(iids: $iids) {
+        nodes {
+          iid
+          widgets {
+            type
+            ... on WorkItemWidgetHierarchy {
+              parent { iid }
+              children(first: 100) { nodes { iid } }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+const WORK_ITEM_IDS_QUERY = `
+  query GitLabWorkItemIds($fullPath: ID!, $iids: [String!]!) {
+    project(fullPath: $fullPath) {
+      workItems(iids: $iids) {
+        nodes { id iid }
+      }
+    }
+  }
+`;
+const SET_WORK_ITEM_PARENT_MUTATION = `
+  mutation SetGitLabWorkItemParent($childId: WorkItemID!, $parentId: WorkItemID!) {
+    workItemsHierarchyReorder(input: { id: $childId, parentId: $parentId }) {
+      errors
+      workItem { iid }
+      parentWorkItem { iid }
+    }
+  }
+`;
+
+type GitlabGraphqlResponse<T> = {
+  data?: T;
+  errors?: Array<{ message: string }>;
+};
+
+type GitlabHierarchyNode = {
+  iid: string;
+  widgets: Array<{
+    type: string;
+    parent?: { iid: string } | null;
+    children?: { nodes: Array<{ iid: string }> } | null;
+  }>;
+};
+
+type GitlabHierarchyData = {
+  project: {
+    workItems: { nodes: GitlabHierarchyNode[] };
+  } | null;
+};
 
 export async function gitlabFetch<T>(
   baseUrl: string,
@@ -116,9 +177,13 @@ export async function gitlabFetch<T>(
   tokenType: GitlabTokenType,
   path: string,
   init?: RequestInit,
+  apiVersion: "v4" | "graphql" = "v4",
 ): Promise<T | undefined> {
   const root = normalizeGitlabBaseUrl(baseUrl);
-  const url = `${root}/api/v4${path.startsWith("/") ? path : `/${path}`}`;
+  const url =
+    apiVersion === "graphql"
+      ? `${root}/api/graphql`
+      : `${root}/api/v4${path.startsWith("/") ? path : `/${path}`}`;
 
   await assertPublicDestination(root, "GitLab");
   assertGitlabTransport(root);
@@ -236,6 +301,37 @@ export function createGitlabClient(
 
   const call = <T>(path: string, init?: RequestInit) =>
     gitlabFetch<T>(baseUrl, accessToken, tokenType, path, init);
+  const graphql = async <T>(
+    query: string,
+    variables: Record<string, unknown>,
+  ): Promise<T> => {
+    const response = required(
+      await gitlabFetch<GitlabGraphqlResponse<T>>(
+        baseUrl,
+        accessToken,
+        tokenType,
+        "",
+        { method: "POST", body: JSON.stringify({ query, variables }) },
+        "graphql",
+      ),
+      "GraphQL response",
+    );
+    if (response.errors?.length) {
+      throw new GitlabApiError(
+        response.errors.map((error) => error.message).join("; "),
+        400,
+        "HTTP_ERROR",
+      );
+    }
+    if (response.data === undefined) {
+      throw new GitlabApiError(
+        "GitLab GraphQL response did not include data",
+        500,
+        "EMPTY_RESPONSE",
+      );
+    }
+    return response.data;
+  };
 
   return {
     async getProject(projectPath: string): Promise<GitlabProject> {
@@ -310,6 +406,126 @@ export function createGitlabClient(
         ),
         "issues",
       );
+    },
+
+    async listSubtaskRelations(
+      projectPath: string,
+      issueIids: number[],
+    ): Promise<GitlabSubtaskRelation[]> {
+      const relations = new Map<string, GitlabSubtaskRelation>();
+      const uniqueIids = [...new Set(issueIids)].map(String);
+
+      for (let offset = 0; offset < uniqueIids.length; offset += 50) {
+        const response = required(
+          await gitlabFetch<GitlabGraphqlResponse<GitlabHierarchyData>>(
+            baseUrl,
+            accessToken,
+            tokenType,
+            "",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                query: WORK_ITEM_HIERARCHY_QUERY,
+                variables: {
+                  fullPath: normalizeProjectPath(projectPath),
+                  iids: uniqueIids.slice(offset, offset + 50),
+                },
+              }),
+            },
+            "graphql",
+          ),
+          "work item hierarchy",
+        );
+
+        if (response.errors?.length) {
+          throw new GitlabApiError(
+            response.errors.map((error) => error.message).join("; "),
+            400,
+            "HTTP_ERROR",
+          );
+        }
+
+        const project = required(
+          response.data?.project ?? undefined,
+          "project",
+        );
+
+        for (const workItem of project.workItems.nodes) {
+          const hierarchy = workItem.widgets.find(
+            (widget) => widget.type === "HIERARCHY",
+          );
+          if (!hierarchy) continue;
+
+          const addRelation = (parentValue: string, childValue: string) => {
+            const parentIid = Number(parentValue);
+            const childIid = Number(childValue);
+            if (
+              !Number.isSafeInteger(parentIid) ||
+              !Number.isSafeInteger(childIid) ||
+              parentIid === childIid
+            ) {
+              return;
+            }
+            relations.set(`${parentIid}:${childIid}`, {
+              parentIid,
+              childIid,
+            });
+          };
+
+          if (hierarchy.parent) {
+            addRelation(hierarchy.parent.iid, workItem.iid);
+          }
+          for (const child of hierarchy.children?.nodes ?? []) {
+            addRelation(workItem.iid, child.iid);
+          }
+        }
+      }
+
+      return [...relations.values()];
+    },
+
+    async setSubtaskParent(
+      projectPath: string,
+      parentIid: number,
+      childIid: number,
+    ): Promise<void> {
+      const projectPathValue = normalizeProjectPath(projectPath);
+      const result = await graphql<{
+        project: {
+          workItems: { nodes: Array<{ id: string; iid: string }> };
+        } | null;
+      }>(WORK_ITEM_IDS_QUERY, {
+        fullPath: projectPathValue,
+        iids: [String(parentIid), String(childIid)],
+      });
+      const workItems = result.project?.workItems.nodes ?? [];
+      const parent = workItems.find((item) => Number(item.iid) === parentIid);
+      const child = workItems.find((item) => Number(item.iid) === childIid);
+      if (!parent || !child) {
+        throw new GitlabApiError(
+          "GitLab parent or child work item could not be found",
+          404,
+          "HTTP_ERROR",
+        );
+      }
+
+      const mutationResult = await graphql<{
+        workItemsHierarchyReorder: {
+          errors: string[];
+          workItem: { iid: string } | null;
+        };
+      }>(SET_WORK_ITEM_PARENT_MUTATION, {
+        parentId: parent.id,
+        childId: child.id,
+      });
+      const mutation = mutationResult.workItemsHierarchyReorder;
+      if (mutation.errors.length > 0 || !mutation.workItem) {
+        throw new GitlabApiError(
+          mutation.errors.join("; ") || "GitLab did not update the hierarchy",
+          400,
+          "HTTP_ERROR",
+        );
+      }
     },
 
     async listIssueNotes(

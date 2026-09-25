@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import db from "../../../database";
 import { projectTable } from "../../../database/schema";
 import type { PluginContext, TaskCreatedEvent } from "../../types";
+import { getCustomTaskLabelNames } from "../../task-labels";
 import { type GitHubConfig, hasVerifiedGitHubBinding } from "../config";
 import {
   createExternalLink,
@@ -136,8 +137,9 @@ async function createTaskIssue(
             state: value === "closed" ? "closed" : "open",
           })
         )?.data?.updated_at,
-      labels: () =>
-        syncTaskFieldLabels(
+      labels: async () => {
+        await addLabelsToIssue(octokit, repositoryOwner, repositoryName, issueNumber, await getCustomTaskLabelNames(event.taskId));
+        return syncTaskFieldLabels(
           event.taskId,
           context,
           { id: createdLink.id, externalId: String(issueNumber) },
@@ -163,7 +165,8 @@ async function createTaskIssue(
               write,
             );
           },
-        ),
+        );
+      },
       ...(comment
         ? {
             ...(existingLink
