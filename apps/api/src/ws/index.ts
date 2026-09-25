@@ -456,6 +456,17 @@ subscribeToEvent<{
   );
 });
 
+subscribeToEvent<{ projectId: string }>(
+  "workspace.labels_updated",
+  async ({ projectId }) => {
+    if (!projectId) return;
+    broadcastToProject(projectId, {
+      type: "WORKSPACE_LABELS_UPDATED",
+      projectId,
+    });
+  },
+);
+
 subscribeToEvent<{ notificationId: string; userId: string }>(
   "notification.created",
   async (data) => {

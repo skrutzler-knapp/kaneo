@@ -133,6 +133,7 @@ async function createTaskRelation({
     taskId: sourceTaskId,
     projectId: sourceTask.projectId,
     userId,
+    source: "kaneo",
   });
 
   return relation;

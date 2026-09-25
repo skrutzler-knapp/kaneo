@@ -2174,8 +2174,12 @@
 			"deleteDialogDescription": "这将永久删除任务及其所有数据，此操作不可撤销。",
 			"deleteAction": "删除任务",
 			"completeAria": "将子任务标记为完成",
-			"progress": "已完成 {{completed}}/{{total}} 个子任务",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+"progress": "已完成 {{completed}}/{{total}} 个子任务",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "属性",

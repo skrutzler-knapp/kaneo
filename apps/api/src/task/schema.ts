@@ -52,6 +52,12 @@ export const bulkUpdateBody = z.object({
 export const createTaskBody = z.object({
   title: z.string(),
   description: z.string(),
+  parentTaskId: z.string().optional().openapi({
+    description: "Create this task as a subtask of another task in the project.",
+  }),
+  labelIds: z.array(z.string()).max(100).optional().openapi({
+    description: "Workspace labels to assign to the task during creation.",
+  }),
   startDate: z.string().optional(),
   dueDate: z.string().optional(),
   priority,

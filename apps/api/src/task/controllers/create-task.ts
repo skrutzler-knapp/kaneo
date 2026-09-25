@@ -1,10 +1,12 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   columnTable,
   customFieldDefinitionTable,
   customFieldValueTable,
+  labelTable,
+  taskRelationTable,
   taskTable,
   userTable,
 } from "../../database/schema";
@@ -53,6 +55,8 @@ async function createTask({
   description,
   priority,
   customFields,
+  parentTaskId,
+  labelIds,
 }: {
   projectId: string;
   currentUserId: string;
@@ -64,14 +68,20 @@ async function createTask({
   description?: string;
   priority?: string;
   customFields?: CustomFieldInput[];
+  parentTaskId?: string;
+  labelIds?: string[];
 }) {
   const resolvedStatus = status || "to-do";
   const resolvedPriority = priority || "no-priority";
   const normalizedCustomFields = deduplicateCustomFields(customFields);
+  const normalizedLabelIds = [...new Set(labelIds ?? [])];
 
   const normalizedUserId = userId?.trim() || undefined;
 
   await assertValidTaskStatus(resolvedStatus, projectId);
+  const workspaceId = normalizedLabelIds.length
+    ? await getProjectWorkspaceId(projectId)
+    : undefined;
 
   const allFields = await db
     .select()
@@ -126,7 +136,45 @@ async function createTask({
     ),
   });
 
-  const createdTask = await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
+    const selectedLabels =
+      workspaceId && normalizedLabelIds.length > 0
+        ? await tx.query.labelTable.findMany({
+            where: and(
+              inArray(labelTable.id, normalizedLabelIds),
+              eq(labelTable.workspaceId, workspaceId),
+            ),
+          })
+        : [];
+
+    if (selectedLabels.length !== normalizedLabelIds.length) {
+      throw new HTTPException(404, { message: "Workspace label not found" });
+    }
+    if (selectedLabels.some((label) => label.deletionStartedAt)) {
+      throw new HTTPException(409, {
+        message: "A selected label is being deleted",
+      });
+    }
+
+    if (parentTaskId) {
+      const [parentTask] = await tx
+        .select({ id: taskTable.id })
+        .from(taskTable)
+        .where(
+          and(
+            eq(taskTable.id, parentTaskId),
+            eq(taskTable.projectId, projectId),
+          ),
+        )
+        .limit(1);
+
+      if (!parentTask) {
+        throw new HTTPException(404, {
+          message: "Parent task not found in project",
+        });
+      }
+    }
+
     const taskNumber = await claimTaskNumber(projectId, tx);
     const nextPosition = await nextTaskPosition(
       tx,
@@ -162,12 +210,63 @@ async function createTask({
       );
     }
 
-    return task;
+    const taskLabels =
+      task && selectedLabels.length > 0
+        ? await tx
+            .insert(labelTable)
+            .values(
+              selectedLabels.map((label) => ({
+                name: label.name,
+                color: label.color,
+                taskId: task.id,
+                workspaceId,
+              })),
+            )
+            .onConflictDoNothing({
+              target: [labelTable.taskId, labelTable.name],
+            })
+            .returning()
+        : [];
+
+    let relation: typeof taskRelationTable.$inferSelect | undefined;
+    if (task && parentTaskId) {
+      [relation] = await tx
+        .insert(taskRelationTable)
+        .values({
+          sourceTaskId: parentTaskId,
+          targetTaskId: task.id,
+          relationType: "subtask",
+        })
+        .returning();
+    }
+
+    return { task, relation, taskLabels };
   });
 
+  const createdTask = result.task;
   if (!createdTask) {
     throw new HTTPException(500, {
       message: "Failed to create task",
+    });
+  }
+
+  if (result.relation) {
+    await publishEvent("task-relation.created", {
+      ...result.relation,
+      taskId: createdTask.id,
+      projectId,
+      userId: currentUserId,
+      source: "kaneo",
+    });
+  }
+
+  for (const label of result.taskLabels) {
+    await publishEvent("task.label_created", {
+      label,
+      taskId: createdTask.id,
+      projectId,
+      userId: currentUserId,
+      type: "label_created",
     });
   }
 

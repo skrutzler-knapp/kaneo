@@ -37,6 +37,14 @@ const updateTask = vi.fn(async (input: Record<string, unknown>) => input);
 const setProject = vi.fn();
 let workspaceId = "workspace-1";
 let projects: { id: string; name: string; slug: string }[] | undefined;
+let workspaceLabels: Array<{
+  id: string;
+  name: string;
+  color: string;
+  taskId: string | null;
+  workspaceId: string;
+  createdAt: string;
+}> = [];
 let storedProject: { id: string; columns: unknown[] } | null = null;
 let ensureTaskId: (() => Promise<string | null>) | undefined;
 
@@ -46,6 +54,7 @@ beforeEach(() => {
     { id: "project-1", name: "Alpha", slug: "alp" },
     { id: "project-2", name: "Beta", slug: "bet" },
   ];
+  workspaceLabels = [];
   storedProject = null;
   useLocation.mockReturnValue({ pathname: "/dashboard/workspace/workspace-1" });
 });
@@ -102,7 +111,7 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 }));
 
 vi.mock("@/hooks/queries/label/use-get-labels-by-workspace", () => ({
-  default: () => ({ data: [] }),
+  default: () => ({ data: workspaceLabels }),
 }));
 
 vi.mock("@/hooks/queries/workspace/use-active-workspace", () => ({
@@ -254,6 +263,97 @@ describe("CreateTaskModal", () => {
         }),
       );
     });
+  });
+
+  it("creates a subtask with its selected lane status and parent", async () => {
+    useLocation.mockReturnValue({
+      pathname: "/dashboard/workspace/workspace-1/project/project-1/board",
+    });
+    render(
+      <CreateTaskModal
+        open
+        onClose={vi.fn()}
+        projectId="project-1"
+        status="in-review"
+        parentTaskId="parent-task-1"
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    enterTitle("Subtask from the dialog");
+    submit();
+
+    await vi.waitFor(() => {
+      expect(createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Subtask from the dialog",
+          projectId: "project-1",
+          status: "in-review",
+          parentTaskId: "parent-task-1",
+        }),
+      );
+    });
+  });
+
+  it("sends selected labels with the task create request", async () => {
+    useLocation.mockReturnValue({
+      pathname: "/dashboard/workspace/workspace-1/project/project-1/board",
+    });
+    workspaceLabels = [
+      {
+        id: "label-backend",
+        name: "backend",
+        color: "#123456",
+        taskId: null,
+        workspaceId: "workspace-1",
+        createdAt: "2026-08-05T00:00:00.000Z",
+      },
+    ];
+
+    render(
+      <CreateTaskModal open onClose={vi.fn()} projectId="project-1" />,
+      { wrapper: createWrapper() },
+    );
+    enterTitle("Labeled task");
+    fireEvent.click(screen.getByText("common:modals.createTask.labels"));
+    fireEvent.click(await screen.findByText("backend"));
+    submit();
+
+    await vi.waitFor(() => {
+      expect(createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Labeled task",
+          labelIds: ["label-backend"],
+        }),
+      );
+    });
+  });
+
+  it("keeps the parent relation on an image-upload draft subtask", async () => {
+    useLocation.mockReturnValue({
+      pathname: "/dashboard/workspace/workspace-1/project/project-1/board",
+    });
+    render(
+      <CreateTaskModal
+        open
+        onClose={vi.fn()}
+        projectId="project-1"
+        status="to-do"
+        parentTaskId="parent-task-1"
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      await ensureTaskId?.();
+    });
+
+    expect(createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "planned",
+        parentTaskId: "parent-task-1",
+      }),
+    );
   });
 
   it("hides the picker when a project is in scope from the route", () => {

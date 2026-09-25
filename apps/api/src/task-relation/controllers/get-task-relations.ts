@@ -9,6 +9,27 @@ import {
 import { taskIsCompleted } from "../../task/task-is-completed";
 
 async function getTaskRelations(taskId: string, workspaceId: string) {
+  return getRelationsForTaskIds([taskId], workspaceId);
+}
+
+async function getProjectTaskRelations(projectId: string, workspaceId: string) {
+  const projectTasks = await db
+    .select({ id: taskTable.id })
+    .from(taskTable)
+    .where(eq(taskTable.projectId, projectId));
+
+  return getRelationsForTaskIds(
+    projectTasks.map((task) => task.id),
+    workspaceId,
+  );
+}
+
+async function getRelationsForTaskIds(
+  taskIdsInScope: string[],
+  workspaceId: string,
+) {
+  if (taskIdsInScope.length === 0) return [];
+
   const relations = await db
     .select({
       id: taskRelationTable.id,
@@ -20,8 +41,8 @@ async function getTaskRelations(taskId: string, workspaceId: string) {
     .from(taskRelationTable)
     .where(
       or(
-        eq(taskRelationTable.sourceTaskId, taskId),
-        eq(taskRelationTable.targetTaskId, taskId),
+        inArray(taskRelationTable.sourceTaskId, taskIdsInScope),
+        inArray(taskRelationTable.targetTaskId, taskIdsInScope),
       ),
     );
 
@@ -83,4 +104,5 @@ async function getTaskRelations(taskId: string, workspaceId: string) {
     }));
 }
 
+export { getProjectTaskRelations };
 export default getTaskRelations;

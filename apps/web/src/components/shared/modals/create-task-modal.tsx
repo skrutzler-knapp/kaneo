@@ -100,6 +100,7 @@ type CreateTaskModalProps = {
   onClose: () => void;
   status?: string;
   projectId?: string;
+  parentTaskId?: string;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -173,6 +174,7 @@ function CreateTaskModalContent({
   onClose,
   status,
   projectId,
+  parentTaskId,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
   const { project, setProject } = useProjectStore();
@@ -493,6 +495,7 @@ function CreateTaskModalContent({
       startDate: startDate ? startDate.toISOString() : undefined,
       dueDate: dueDate ? dueDate.toISOString() : undefined,
       status: draftStatus,
+      parentTaskId,
       customFields: Object.entries(customFieldValues)
         .filter(([_, value]) => value.trim() !== "")
         .map(([fieldId, value]) => ({
@@ -538,6 +541,7 @@ function CreateTaskModalContent({
     title,
     t,
     customFieldValues,
+    parentTaskId,
   ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -591,6 +595,8 @@ function CreateTaskModalContent({
               startDate: startDate ? startDate.toISOString() : undefined,
               dueDate: dueDate ? dueDate.toISOString() : undefined,
               status: taskStatus,
+              parentTaskId,
+              labelIds: labels.map((label) => label.id),
               customFields: Object.entries(customFieldValues)
                 .filter(([_, value]) => value.trim() !== "")
                 .map(([fieldId, value]) => ({
@@ -600,16 +606,18 @@ function CreateTaskModalContent({
             }),
           );
 
-      for (const label of labels) {
-        try {
-          await createLabel({
-            name: label.name,
-            color: label.color,
-            taskId: savedTask.id,
-            workspaceId: workspace.id,
-          });
-        } catch (error) {
-          console.error("Failed to create label:", error);
+      if (currentDraft) {
+        for (const label of labels) {
+          try {
+            await createLabel({
+              name: label.name,
+              color: label.color,
+              taskId: savedTask.id,
+              workspaceId: workspace.id,
+            });
+          } catch (error) {
+            console.error("Failed to create label:", error);
+          }
         }
       }
 
@@ -628,7 +636,9 @@ function CreateTaskModalContent({
       draftTaskRef.current = null;
       if (!activeRef.current) return;
       setDraftTask(savedTask);
-      syncTaskIntoProject(savedTask);
+      if (!parentTaskId) {
+        syncTaskIntoProject(savedTask);
+      }
       toast.success(
         draftTask
           ? t("common:modals.createTask.successUpdated")
@@ -1664,7 +1674,12 @@ function CreateTaskModal(props: CreateTaskModalProps) {
   // upload drafts, instead of carrying confidential fields into a new context.
   return (
     <CreateTaskModalContent
-      key={JSON.stringify([workspace?.id, location.pathname, props.projectId])}
+      key={JSON.stringify([
+        workspace?.id,
+        location.pathname,
+        props.projectId,
+        props.parentTaskId,
+      ])}
       {...props}
     />
   );

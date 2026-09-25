@@ -2,12 +2,20 @@ import { cva } from "class-variance-authority";
 import { useState } from "react";
 import { useBackgroundStore } from "@/store/background";
 import type { ProjectWithTasks } from "@/types/project";
+import type Task from "@/types/task";
 import { ColumnDropzone } from "./column-dropzone";
 import { ColumnHeader } from "./column-header";
 
 type ColumnProps = {
   column: ProjectWithTasks["columns"][number];
   disableDragDrop?: boolean;
+  columnIndex: number;
+  boardRowCount: number;
+  rowByTaskId: ReadonlyMap<string, number>;
+  subtasksByParentId: ReadonlyMap<string, Task[]>;
+  expandedParentIds: ReadonlySet<string>;
+  groupSubtasks: boolean;
+  onToggleSubtasks: (taskId: string) => void;
 };
 
 export const columnVariants = cva(
@@ -52,28 +60,49 @@ export const columnVariants = cva(
   },
 );
 
-function Column({ column, disableDragDrop = false }: ColumnProps) {
+function Column({
+  column,
+  disableDragDrop = false,
+  columnIndex,
+  boardRowCount,
+  rowByTaskId,
+  subtasksByParentId,
+  expandedParentIds,
+  groupSubtasks,
+  onToggleSubtasks,
+}: ColumnProps) {
   const [isDropzoneOver, setIsDropzoneOver] = useState(false);
   const { background } = useBackgroundStore();
 
   return (
-    <div
-      className={columnVariants({
-        isDropzoneOver,
-        backgroundImage: !!background,
-      })}
-    >
-      <div className="shrink-0 border-b border-border/60 px-3 py-2">
+    <>
+      <div
+        className={`sticky top-0 z-20 rounded-t-xl border border-b-0 px-3 py-2 ${
+          isDropzoneOver
+            ? "border-ring/40 bg-accent/80"
+            : "border-border/70 bg-background/95 backdrop-blur"
+        }`}
+        style={{ gridColumn: columnIndex + 1, gridRow: 1 }}
+      >
         <ColumnHeader column={column} />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pt-1 pb-2 [-webkit-overflow-scrolling:touch]">
-        <ColumnDropzone
-          column={column}
-          disableDragDrop={disableDragDrop}
-          onIsOverChange={setIsDropzoneOver}
-        />
-      </div>
-    </div>
+      <ColumnDropzone
+        column={column}
+        disableDragDrop={disableDragDrop}
+        onIsOverChange={setIsDropzoneOver}
+        gridColumn={columnIndex + 1}
+        boardRowCount={boardRowCount}
+        rowByTaskId={rowByTaskId}
+        subtasksByParentId={subtasksByParentId}
+        expandedParentIds={expandedParentIds}
+        groupSubtasks={groupSubtasks}
+        onToggleSubtasks={onToggleSubtasks}
+        className={columnVariants({
+          isDropzoneOver,
+          backgroundImage: !!background,
+        })}
+      />
+    </>
   );
 }
 

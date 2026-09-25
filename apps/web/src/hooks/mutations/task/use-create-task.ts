@@ -17,6 +17,8 @@ function useCreateTask() {
       dueDate,
       priority,
       customFields,
+      parentTaskId,
+      labelIds,
     }: CreateTaskRequest) =>
       createTask(
         title,
@@ -28,6 +30,8 @@ function useCreateTask() {
         dueDate ? new Date(dueDate) : undefined,
         priority,
         customFields,
+        parentTaskId,
+        labelIds,
       ),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
@@ -36,6 +40,11 @@ function useCreateTask() {
       void queryClient.invalidateQueries({
         queryKey: ["custom-field-values", variables.projectId],
       });
+      if (variables.parentTaskId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["task-relations", "project", variables.projectId],
+        });
+      }
     },
   });
 }

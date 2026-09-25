@@ -2174,8 +2174,12 @@
 			"deleteDialogDescription": "Ini akan menghapus tugas dan semua datanya secara permanen. Anda tidak dapat membatalkan tindakan ini.",
 			"deleteAction": "Hapus Tugas",
 			"completeAria": "Tandai subtugas selesai",
-			"progress": "{{completed}} dari {{total}} subtugas selesai",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+"progress": "{{completed}} dari {{total}} subtugas selesai",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Properti",

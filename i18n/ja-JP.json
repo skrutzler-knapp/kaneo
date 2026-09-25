@@ -2174,8 +2174,12 @@
 			"deleteDialogDescription": "これにより、タスクとそのすべてのデータが完全に削除されます。この操作は取り消せません。",
 			"deleteAction": "タスクを削除",
 			"completeAria": "サブタスクを完了にする",
-			"progress": "サブタスク {{total}} 件中 {{completed}} 件完了",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+"progress": "サブタスク {{total}} 件中 {{completed}} 件完了",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "プロパティ",

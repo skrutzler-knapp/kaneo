@@ -74,6 +74,10 @@ export function useProjectWebSocket(projectId: string) {
             }
             return;
           }
+          if (message.type === "WORKSPACE_LABELS_UPDATED") {
+            queryClient.invalidateQueries({ queryKey: ["labels"] });
+            return;
+          }
           if (
             message.type === "TASK_UPDATED" ||
             message.type === "TASK_CREATED" ||
@@ -94,6 +98,9 @@ export function useProjectWebSocket(projectId: string) {
             }
 
             if (message.type === "TASK_RELATION_UPDATED") {
+              queryClient.invalidateQueries({
+                queryKey: ["task-relations", "project", message.projectId],
+              });
               if (message.sourceTaskId) {
                 queryClient.invalidateQueries({
                   queryKey: ["task", message.sourceTaskId],
@@ -123,7 +130,7 @@ export function useProjectWebSocket(projectId: string) {
 
             if (message.type === "TASK_LABEL_UPDATED") {
               queryClient.invalidateQueries({
-                queryKey: ["labels", message.taskId],
+                queryKey: ["labels"],
               });
             }
 
