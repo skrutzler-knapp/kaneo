@@ -22,7 +22,6 @@ const mocks = vi.hoisted(() => ({
   canCreateTasks: vi.fn(),
   canUpdateTasks: vi.fn(),
   createTask: vi.fn(),
-  createRelation: vi.fn(),
   getColumns: vi.fn(),
   getRelations: vi.fn(),
   fetchColumns: vi.fn(),
@@ -42,9 +41,6 @@ vi.mock("react-i18next", () => ({
 }));
 vi.mock("@/hooks/mutations/task/use-create-task", () => ({
   default: () => ({ mutateAsync: mocks.createTask, isPending: false }),
-}));
-vi.mock("@/hooks/mutations/task-relation/use-create-task-relation", () => ({
-  default: () => ({ mutateAsync: mocks.createRelation }),
 }));
 vi.mock("@/hooks/mutations/task/use-delete-task", () => ({
   useDeleteTask: () => ({ mutateAsync: vi.fn() }),
@@ -98,7 +94,6 @@ afterEach(() => {
 describe("TaskSubtasks", () => {
   it("creates a subtask as planned when its parent is planned", async () => {
     mocks.createTask.mockResolvedValue({ id: "subtask-1" });
-    mocks.createRelation.mockResolvedValue({});
 
     render(
       <TaskSubtasks
@@ -126,13 +121,16 @@ describe("TaskSubtasks", () => {
 
     await waitFor(() => expect(mocks.createTask).toHaveBeenCalledTimes(1));
     expect(mocks.createTask).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "planned" }),
+      expect.objectContaining({
+        status: "planned",
+        parentTaskId: "parent-1",
+      }),
     );
+    expect(mocks.createTask).toHaveBeenCalledTimes(1);
   });
 
   it("uses the project's first active column for an active parent", async () => {
     mocks.createTask.mockResolvedValue({ id: "subtask-2" });
-    mocks.createRelation.mockResolvedValue({});
 
     render(
       <TaskSubtasks
@@ -160,8 +158,56 @@ describe("TaskSubtasks", () => {
 
     await waitFor(() => expect(mocks.createTask).toHaveBeenCalledTimes(1));
     expect(mocks.createTask).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "to-do" }),
+      expect.objectContaining({
+        status: "to-do",
+        parentTaskId: "parent-2",
+      }),
     );
+  });
+
+  it("creates a nested subtask with its immediate parent in the atomic request", async () => {
+    mocks.getRelations.mockReturnValue({
+      data: [
+        {
+          relationType: "subtask",
+          sourceTaskId: "root-task",
+          targetTaskId: "nested-parent",
+          targetTask: null,
+        },
+      ],
+    });
+
+    render(
+      <TaskSubtasks
+        taskId="nested-parent"
+        projectId="project-1"
+        workspaceId="workspace-1"
+        parentStatus="in-progress"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "tasks:subtasks.addAction tasks:subtasks.title",
+      }),
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText("tasks:subtasks.inputPlaceholder"),
+      { target: { value: "Nested child" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:subtasks.addAction" }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Nested child",
+          status: "to-do",
+          parentTaskId: "nested-parent",
+        }),
+      );
+    });
   });
 
   it("blocks active-parent creation until project columns are available", () => {

@@ -38,7 +38,6 @@ import useProjectStore from "@/store/project";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
-import type { ProjectTaskRelation } from "@/fetchers/task-relation/get-project-task-relations";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import Column from "./column";
 import SubtaskExpansionPanel from "./subtask-expansion-panel";
@@ -190,6 +189,7 @@ function KanbanBoard({
     const expansionRows: Array<{
       parent: Task;
       subtasks: Task[];
+      taskOrderById: ReadonlyMap<string, number>;
       row: number;
       anchorColumnIndex: number;
     }> = [];
@@ -220,7 +220,13 @@ function KanbanBoard({
           continue;
         }
 
-        expansionRows.push({ parent, subtasks, row, anchorColumnIndex });
+        expansionRows.push({
+          parent,
+          subtasks,
+          taskOrderById,
+          row,
+          anchorColumnIndex,
+        });
         row++;
       }
     }
@@ -511,6 +517,7 @@ function KanbanBoard({
                 key={expansion.parent.id}
                 {...expansion}
                 columns={boardState.columns}
+                subtasksByParentId={boardState.subtasksByParentId}
                 columnCount={boardState.columns.length}
                 disableDragDrop={disableDragDrop}
               />
@@ -522,7 +529,7 @@ function KanbanBoard({
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} isFinalColumn={activeIsFinal} />
+              <TaskCard task={activeTask} isFinalColumn={activeIsFinal} disableDragDrop />
             </div>
           </div>
         ) : null}

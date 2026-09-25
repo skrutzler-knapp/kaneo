@@ -66,6 +66,7 @@ type TaskCardContentProps = {
   isDragging: boolean;
   dragListeners: DragListeners;
   subtaskCount?: number;
+  nestedSubtaskCount?: number;
   subtasksExpanded?: boolean;
   groupSubtasks?: boolean;
   onToggleSubtasks?: () => void;
@@ -78,6 +79,7 @@ function TaskCardContent({
   isDragging,
   dragListeners,
   subtaskCount = 0,
+  nestedSubtaskCount = 0,
   subtasksExpanded = false,
   groupSubtasks = true,
   onToggleSubtasks,
@@ -198,14 +200,14 @@ function TaskCardContent({
 
             {showAssignees && (
               <div className="absolute top-3 right-3">
-                {task.userId ? (
+                {task.userId || task.assigneeName ? (
                   <Avatar className="h-5 w-5">
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={assignee?.user?.image ?? task.assigneeImage ?? ""}
+                      alt={assignee?.user?.name || task.assigneeName || ""}
                     />
                     <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(assignee?.user?.name || task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (
@@ -364,6 +366,12 @@ function TaskCardContent({
                 <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{subtaskCount}</span>
                 {subtasksExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </button>
+            )}
+            {nestedSubtaskCount > 0 && (
+              <span title={`${t("tasks:subtasks.title")}: ${nestedSubtaskCount}`}
+                className="mt-2 inline-flex h-5.5 items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                <ListTree className="size-3" /><span>{t("tasks:subtasks.title")}</span><span>{nestedSubtaskCount}</span>
+              </span>
             )}
           </div>
         </ContextMenuTrigger>
