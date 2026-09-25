@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ProjectTaskRelation } from "@/fetchers/task-relation/get-project-task-relations";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useGetProjectTaskRelations from "@/hooks/queries/task-relation/use-get-project-task-relations";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -28,7 +29,6 @@ import useProjectStore from "@/store/project";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
-import type { ProjectTaskRelation } from "@/fetchers/task-relation/get-project-task-relations";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import Column from "./column";
 import SubtaskExpansionPanel from "./subtask-expansion-panel";
@@ -128,6 +128,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
     const expansionRows: Array<{
       parent: Task;
       subtasks: Task[];
+      taskOrderById: ReadonlyMap<string, number>;
       row: number;
       anchorColumnIndex: number;
     }> = [];
@@ -158,7 +159,13 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
           continue;
         }
 
-        expansionRows.push({ parent, subtasks, row, anchorColumnIndex });
+        expansionRows.push({
+          parent,
+          subtasks,
+          taskOrderById,
+          row,
+          anchorColumnIndex,
+        });
         row++;
       }
     }
@@ -338,8 +345,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
           const siblings = source.tasks
             .filter((item) => siblingIds.has(item.id))
             .sort(
-              (left, right) =>
-                (left.position ?? 0) - (right.position ?? 0),
+              (left, right) => (left.position ?? 0) - (right.position ?? 0),
             );
           const sourceIndex = siblings.findIndex(
             (item) => item.id === activeId,
@@ -365,8 +371,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
             updateTask({ ...item, position });
           });
           source.tasks.sort(
-            (left, right) =>
-              (left.position ?? 0) - (right.position ?? 0),
+            (left, right) => (left.position ?? 0) - (right.position ?? 0),
           );
           return;
         }
@@ -584,6 +589,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
                 key={expansion.parent.id}
                 {...expansion}
                 columns={boardState.columns}
+                subtasksByParentId={boardState.subtasksByParentId}
                 columnCount={boardState.columns.length}
                 disableDragDrop={disableDragDrop}
               />
@@ -595,7 +601,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} />
+              <TaskCard task={activeTask} disableDragDrop />
             </div>
           </div>
         ) : null}

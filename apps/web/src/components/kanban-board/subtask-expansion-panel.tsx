@@ -3,18 +3,20 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
-import TaskCard from "@/components/kanban-board/task-card";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import TaskCard from "@/components/kanban-board/task-card";
+import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
 
 type SubtaskExpansionPanelProps = {
   parent: Task;
   subtasks: Task[];
+  subtasksByParentId: ReadonlyMap<string, Task[]>;
+  taskOrderById: ReadonlyMap<string, number>;
   columns: ProjectWithTasks["columns"];
   row: number;
   anchorColumnIndex: number;
@@ -27,6 +29,7 @@ function SubtaskLane({
   status,
   name,
   tasks,
+  subtasksByParentId,
   disableDragDrop,
   onAddSubtask,
 }: {
@@ -34,6 +37,7 @@ function SubtaskLane({
   status: string;
   name: string;
   tasks: Task[];
+  subtasksByParentId: ReadonlyMap<string, Task[]>;
   disableDragDrop: boolean;
   onAddSubtask: (status: string) => void;
 }) {
@@ -78,6 +82,7 @@ function SubtaskLane({
               key={task.id}
               task={task}
               disableDragDrop={disableDragDrop}
+              nestedSubtaskCount={subtasksByParentId.get(task.id)?.length ?? 0}
               dragData={{ type: "subtask", parentTaskId }}
             />
           ))}
@@ -94,6 +99,8 @@ export default function SubtaskExpansionPanel({
   row,
   anchorColumnIndex,
   columnCount,
+  subtasksByParentId,
+  taskOrderById,
   disableDragDrop = false,
 }: SubtaskExpansionPanelProps) {
   const { t } = useTranslation();
@@ -111,6 +118,13 @@ export default function SubtaskExpansionPanel({
     const laneTasks = tasksByStatus.get(task.status) ?? [];
     laneTasks.push(task);
     tasksByStatus.set(task.status, laneTasks);
+  }
+  for (const laneTasks of tasksByStatus.values()) {
+    laneTasks.sort(
+      (left, right) =>
+        (taskOrderById.get(left.id) ?? Number.POSITIVE_INFINITY) -
+        (taskOrderById.get(right.id) ?? Number.POSITIVE_INFINITY),
+    );
   }
 
   return (
@@ -142,6 +156,7 @@ export default function SubtaskExpansionPanel({
             status={lane.id}
             name={lane.name}
             tasks={tasksByStatus.get(lane.id) ?? []}
+            subtasksByParentId={subtasksByParentId}
             disableDragDrop={disableDragDrop}
             onAddSubtask={(status) => {
               setCreateStatus(status);

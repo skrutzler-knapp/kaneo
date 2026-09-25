@@ -26,9 +26,9 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon } from "@/lib/priority";
-import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { SortConfig } from "@/lib/sort-tasks";
 import { useBackgroundStore } from "@/store/background";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 
 type WorkspaceLabel = {
@@ -703,6 +703,22 @@ export default function BoardToolbar({
 
             <SortControl sort={sort} onSortChange={onSortChange} />
 
+            {viewMode === "board" && (
+              <button
+                type="button"
+                aria-pressed={groupSubtasks}
+                className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  groupSubtasks
+                    ? "bg-accent text-foreground"
+                    : "bg-background text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                }`}
+                onClick={() => setGroupSubtasks(!groupSubtasks)}
+              >
+                <ListTree className="h-3.5 w-3.5" />
+                {t("tasks:subtasks.groupToggle")}
+              </button>
+            )}
+
             {selectedStatusIds.length > 0 && (
               <ActiveFilterChip
                 subject={t("tasks:boardFilters.subjects.status")}
@@ -859,22 +875,6 @@ export default function BoardToolbar({
                   <PanelsTopLeft className="h-3 w-3" />
                   {t("tasks:view.board")}
                 </button>
-                {viewMode === "board" && (
-                  <button
-                    type="button"
-                    aria-label={t("tasks:subtasks.groupToggle")}
-                    aria-pressed={groupSubtasks}
-                    title={t("tasks:subtasks.groupToggle")}
-                    className={`ml-1 mr-0.5 inline-flex size-6 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                      groupSubtasks
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
-                    }`}
-                    onClick={() => setGroupSubtasks(!groupSubtasks)}
-                  >
-                    <ListTree className="size-4" />
-                  </button>
-                )}
               </div>
             </div>
             <button

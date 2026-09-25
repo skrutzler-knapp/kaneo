@@ -58,6 +58,7 @@ type TaskCardProps = {
   disableDragDrop?: boolean;
   dragData?: { type: "subtask"; parentTaskId: string };
   subtaskCount?: number;
+  nestedSubtaskCount?: number;
   subtasksExpanded?: boolean;
   groupSubtasks?: boolean;
   onToggleSubtasks?: () => void;
@@ -68,6 +69,7 @@ function TaskCard({
   disableDragDrop = false,
   dragData,
   subtaskCount = 0,
+  nestedSubtaskCount = 0,
   subtasksExpanded = false,
   groupSubtasks = true,
   onToggleSubtasks,
@@ -261,14 +263,22 @@ function TaskCard({
 
             {showAssignees && (
               <div className="absolute top-3 right-3">
-                {task.userId ? (
-                  <Avatar className="h-5 w-5">
+                {task.userId || task.assigneeName ? (
+                  <Avatar
+                    className="h-5 w-5"
+                    title={
+                      task.assigneeUsername ||
+                      assignee?.user?.name ||
+                      task.assigneeName ||
+                      undefined
+                    }
+                  >
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={assignee?.user?.image ?? task.assigneeImage ?? ""}
+                      alt={assignee?.user?.name || task.assigneeName || ""}
                     />
                     <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(assignee?.user?.name || task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (
@@ -538,6 +548,16 @@ function TaskCard({
                   <ChevronDown className="size-4" />
                 )}
               </button>
+            )}
+            {nestedSubtaskCount > 0 && (
+              <span
+                title={`${t("tasks:subtasks.title")}: ${nestedSubtaskCount}`}
+                className="mt-2 inline-flex h-5.5 items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground"
+              >
+                <ListTree className="size-3" />
+                <span>{t("tasks:subtasks.title")}</span>
+                <span>{nestedSubtaskCount}</span>
+              </span>
             )}
           </div>
         </ContextMenuTrigger>

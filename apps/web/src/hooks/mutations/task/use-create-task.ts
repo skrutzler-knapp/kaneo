@@ -42,6 +42,9 @@ function useCreateTask() {
       });
       if (variables.parentTaskId) {
         void queryClient.invalidateQueries({
+          queryKey: ["task-relations", variables.parentTaskId],
+        });
+        void queryClient.invalidateQueries({
           queryKey: ["task-relations", "project", variables.projectId],
         });
       }
