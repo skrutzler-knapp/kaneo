@@ -310,10 +310,9 @@ describe("CreateTaskModal", () => {
       },
     ];
 
-    render(
-      <CreateTaskModal open onClose={vi.fn()} projectId="project-1" />,
-      { wrapper: createWrapper() },
-    );
+    render(<CreateTaskModal open onClose={vi.fn()} projectId="project-1" />, {
+      wrapper: createWrapper(),
+    });
     enterTitle("Labeled task");
     fireEvent.click(screen.getByText("common:modals.createTask.labels"));
     fireEvent.click(await screen.findByText("backend"));
