@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import db from "../../database";
 import {
   externalLinkTable,
@@ -9,12 +9,12 @@ import {
   userTable,
 } from "../../database/schema";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
-import { taskIsCompleted } from "../../task/task-is-completed";
 import {
   gitlabAssigneeDisplay,
   gitlabOwnsAssignees,
   readGitlabAssignees,
 } from "../../plugins/gitlab/utils/assignee-sync";
+import { taskIsCompleted } from "../../task/task-is-completed";
 
 async function getTaskRelations(
   taskId: string,
@@ -25,13 +25,17 @@ async function getTaskRelations(
 }
 
 async function getProjectTaskRelations(projectId: string, workspaceId: string, userId: string) {
-  const projectTasks = await db
-    .select({ id: taskTable.id })
-    .from(taskTable)
-    .where(eq(taskTable.projectId, projectId));
+  const projectTaskIds = () =>
+    db
+      .select({ id: taskTable.id })
+      .from(taskTable)
+      .where(eq(taskTable.projectId, projectId));
 
-  return getRelationsForTaskIds(
-    projectTasks.map((task) => task.id),
+  return getRelationsForTaskScope(
+    or(
+      inArray(taskRelationTable.sourceTaskId, projectTaskIds()),
+      inArray(taskRelationTable.targetTaskId, projectTaskIds()),
+    ),
     workspaceId,
     userId,
   );
@@ -44,6 +48,21 @@ async function getRelationsForTaskIds(
 ) {
   if (taskIdsInScope.length === 0) return [];
 
+  return getRelationsForTaskScope(
+    or(
+      inArray(taskRelationTable.sourceTaskId, taskIdsInScope),
+      inArray(taskRelationTable.targetTaskId, taskIdsInScope),
+    ),
+    workspaceId,
+    userId,
+  );
+}
+
+async function getRelationsForTaskScope(
+  relationScope: SQL | undefined,
+  workspaceId: string,
+  userId: string,
+) {
   const relations = await db
     .select({
       id: taskRelationTable.id,
@@ -53,12 +72,7 @@ async function getRelationsForTaskIds(
       createdAt: taskRelationTable.createdAt,
     })
     .from(taskRelationTable)
-    .where(
-      or(
-        inArray(taskRelationTable.sourceTaskId, taskIdsInScope),
-        inArray(taskRelationTable.targetTaskId, taskIdsInScope),
-      ),
-    );
+    .where(relationScope);
 
   const taskIds = new Set<string>();
   for (const rel of relations) {
@@ -114,6 +128,7 @@ async function getRelationsForTaskIds(
     const externalLinks = await db
       .select({
         taskId: externalLinkTable.taskId,
+        integrationId: externalLinkTable.integrationId,
         metadata: externalLinkTable.metadata,
         integrationConfig: integrationTable.config,
       })
@@ -131,8 +146,20 @@ async function getRelationsForTaskIds(
         ),
       );
 
+    const gitlabOwnershipByIntegrationId = new Map<string, boolean>();
     for (const externalLink of externalLinks) {
-      if (!gitlabOwnsAssignees(externalLink.integrationConfig)) continue;
+      if (!externalLink.integrationId) continue;
+      let ownsAssignees = gitlabOwnershipByIntegrationId.get(
+        externalLink.integrationId,
+      );
+      if (ownsAssignees === undefined) {
+        ownsAssignees = gitlabOwnsAssignees(externalLink.integrationConfig);
+        gitlabOwnershipByIntegrationId.set(
+          externalLink.integrationId,
+          ownsAssignees,
+        );
+      }
+      if (!ownsAssignees) continue;
       const task = tasks.get(externalLink.taskId);
       if (!task) continue;
       tasks.set(externalLink.taskId, {

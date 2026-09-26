@@ -302,18 +302,31 @@ async function getTasksPage(
     string,
     ReturnType<typeof readGitlabAssignees>
   >();
+  const gitlabOwnershipByIntegrationId = new Map<string, boolean>();
   for (const externalLink of externalLinksData) {
     const parsedMetadata = parseMetadata(externalLink.metadata);
     if (
       externalLink.resourceType === "issue" &&
       externalLink.integrationType === "gitlab" &&
       externalLink.integrationIsActive === true &&
-      gitlabOwnsAssignees(externalLink.integrationConfig)
+      externalLink.integrationId
     ) {
-      gitlabAssigneesByTaskId.set(
-        externalLink.taskId,
-        readGitlabAssignees(JSON.stringify(parsedMetadata ?? {})),
+      let ownsAssignees = gitlabOwnershipByIntegrationId.get(
+        externalLink.integrationId,
       );
+      if (ownsAssignees === undefined) {
+        ownsAssignees = gitlabOwnsAssignees(externalLink.integrationConfig);
+        gitlabOwnershipByIntegrationId.set(
+          externalLink.integrationId,
+          ownsAssignees,
+        );
+      }
+      if (ownsAssignees) {
+        gitlabAssigneesByTaskId.set(
+          externalLink.taskId,
+          readGitlabAssignees(externalLink.metadata),
+        );
+      }
     }
 
     if (!taskExternalLinksMap.has(externalLink.taskId)) {
