@@ -1175,14 +1175,8 @@ function CreateTaskModalContent({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    disabled={assigneesManagedByGitlab}
-                    title={
-                      assigneesManagedByGitlab
-                        ? t("settings:gitlabIntegration.assigneeSourceTitle")
-                        : undefined
-                    }
                     className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent",
+                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
                       startDate
                         ? "bg-accent/30 text-foreground"
                         : "text-muted-foreground",
@@ -1262,8 +1256,14 @@ function CreateTaskModalContent({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
+                    disabled={assigneesManagedByGitlab}
+                    title={
+                      assigneesManagedByGitlab
+                        ? t("settings:gitlabIntegration.assigneeEditLocked")
+                        : undefined
+                    }
                     className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent",
                       selectedUser
                         ? "bg-accent/30 text-foreground"
                         : "text-muted-foreground",
