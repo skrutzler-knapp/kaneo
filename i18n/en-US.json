@@ -2197,6 +2197,7 @@
 			"labels": "Labels",
 			"copyTaskLink": "Copy task link",
 			"copyTaskBranch": "Copy task branch",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "Start",
 			"startDate": "Start date",
 			"noDate": "No date"

@@ -2184,9 +2184,9 @@
 			"deleteDialogDescription": "Bu, tapşırığı və bütün məlumatlarını həmişəlik siləcək. Bu əməliyyatı geri qaytara bilməzsiniz.",
 			"deleteAction": "Tapşırığı sil",
 			"completeAria": "Alt tapşırığı tamamlanmış kimi işarələ",
-"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
 			"progress": "{{completed}} of {{total}} subtasks completed",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2196,6 +2196,7 @@
 			"labels": "Etiketlər",
 			"copyTaskLink": "Tapşırığın keçidini kopyala",
 			"copyTaskBranch": "Tapşırığın budağını kopyala",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "Başlat",
 			"startDate": "Başlama tarixi",
 			"noDate": "Tarix yoxdur"

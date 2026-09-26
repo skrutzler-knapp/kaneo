@@ -2177,9 +2177,9 @@
 			"deleteDialogDescription": "これにより、タスクとそのすべてのデータが完全に削除されます。この操作は取り消せません。",
 			"deleteAction": "タスクを削除",
 			"completeAria": "サブタスクを完了にする",
-"progress": "サブタスク {{total}} 件中 {{completed}} 件完了",
+			"progress": "サブタスク {{total}} 件中 {{completed}} 件完了",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2189,6 +2189,7 @@
 			"labels": "ラベル",
 			"copyTaskLink": "タスクのリンクをコピー",
 			"copyTaskBranch": "タスクのブランチ名をコピー",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "開始",
 			"startDate": "開始日",
 			"noDate": "日付なし"

@@ -8489,6 +8489,9 @@
 						"copyTaskBranch": {
 							"type": "string"
 						},
+						"copyFailed": {
+							"type": "string"
+						},
 						"start": {
 							"type": "string"
 						},
@@ -8504,6 +8507,7 @@
 						"labels",
 						"copyTaskLink",
 						"copyTaskBranch",
+						"copyFailed",
 						"start",
 						"startDate",
 						"noDate"

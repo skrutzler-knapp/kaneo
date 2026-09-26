@@ -2206,9 +2206,9 @@
 			"deleteDialogDescription": "Задача и все её данные будут безвозвратно удалены. Это действие нельзя отменить.",
 			"deleteAction": "Удалить задачу",
 			"completeAria": "Отметить подзадачу выполненной",
-"progress": "Выполнено подзадач: {{completed}} из {{total}}",
+			"progress": "Выполнено подзадач: {{completed}} из {{total}}",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2218,6 +2218,7 @@
 			"labels": "Метки",
 			"copyTaskLink": "Скопировать ссылку на задачу",
 			"copyTaskBranch": "Скопировать ветку задачи",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "Начало",
 			"startDate": "Дата начала",
 			"noDate": "Без даты"

@@ -2184,9 +2184,9 @@
 			"deleteDialogDescription": "Dadurch wird die Aufgabe und alle zugehörigen Daten dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
 			"deleteAction": "Aufgabe löschen",
 			"completeAria": "Teilaufgabe als erledigt markieren",
-"progress": "{{completed}} von {{total}} Unteraufgaben abgeschlossen",
+			"progress": "{{completed}} von {{total}} Unteraufgaben abgeschlossen",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2196,6 +2196,7 @@
 			"labels": "Labels",
 			"copyTaskLink": "Aufgabenlink kopieren",
 			"copyTaskBranch": "Aufgaben-Branch kopieren",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "Start",
 			"startDate": "Startdatum",
 			"noDate": "Kein Datum"

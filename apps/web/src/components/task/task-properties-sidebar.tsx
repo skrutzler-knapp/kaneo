@@ -126,7 +126,7 @@ export default function TaskPropertiesSidebar({
       `${window.location.origin}/dashboard/workspace/${workspaceId}/project/${projectId}/task/${taskId}`,
     );
     if (!copied) {
-      toast.error(t("team:invitations.copyFailed"));
+      toast.error(t("tasks:properties.copyFailed"));
       return;
     }
     toast.message(t("tasks:properties.copyTaskLink"));
@@ -141,7 +141,7 @@ export default function TaskPropertiesSidebar({
     );
     const copied = await copyToClipboard(branchName);
     if (!copied) {
-      toast.error(t("team:invitations.copyFailed"));
+      toast.error(t("tasks:properties.copyFailed"));
       return;
     }
     toast.message(t("tasks:properties.copyTaskBranch"));

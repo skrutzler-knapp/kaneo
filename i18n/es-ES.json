@@ -2191,9 +2191,9 @@
 			"deleteDialogDescription": "Esto eliminará permanentemente la tarea y sus datos. Esta acción no puede deshacerse.",
 			"deleteAction": "Eliminar tarea",
 			"completeAria": "Marcar subtarea como completada",
-"progress": "{{completed}} de {{total}} subtareas completadas",
+			"progress": "{{completed}} de {{total}} subtareas completadas",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2203,6 +2203,7 @@
 			"labels": "Etiquetas",
 			"copyTaskLink": "Copiar enlace a tarea",
 			"copyTaskBranch": "Copiar la rama de la tarea",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "Comenzar",
 			"startDate": "Fecha de inicio",
 			"noDate": "Sin fecha"

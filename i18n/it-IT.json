@@ -2191,9 +2191,9 @@
 			"deleteDialogDescription": "Questo rimuoverà permanentemente l'attività e tutti i suoi dati. Non puoi annullare questa azione.",
 			"deleteAction": "Elimina Attività",
 			"completeAria": "Segna sotto-attività come completata",
-"progress": "{{completed}} di {{total}} sottoattività completate",
+			"progress": "{{completed}} di {{total}} sottoattività completate",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2203,6 +2203,7 @@
 			"labels": "Etichette",
 			"copyTaskLink": "Copia link attività",
 			"copyTaskBranch": "Copia ramo attività",
+			"copyFailed": "Could not copy to clipboard",
 			"start": "Inizio",
 			"startDate": "Data inizio",
 			"noDate": "Nessuna data"

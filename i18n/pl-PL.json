@@ -2575,6 +2575,7 @@
 		},
 		"properties": {
 			"copyTaskBranch": "Kopiuj gałąź zadania",
+			"copyFailed": "Could not copy to clipboard",
 			"copyTaskLink": "Kopiuj link do zadania",
 			"labels": "Etykiety",
 			"noDate": "Brak daty",
@@ -2636,9 +2637,9 @@
 			"empty": "Brak podzadań",
 			"inputPlaceholder": "Tytuł podzadania...",
 			"title": "Podzadania",
-"progress": "Ukończone podzadania: {{completed}} z {{total}}",
+			"progress": "Ukończone podzadania: {{completed}} z {{total}}",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
