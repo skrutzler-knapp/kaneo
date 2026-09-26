@@ -16,6 +16,7 @@ import {
   errorResponse,
   jsonResponse,
 } from "../openapi";
+import { notifyTaskViewed } from "../plugins/registry";
 import {
   assertTaskImageKeyMatchesContext,
   createTaskImageUploadUrl,
@@ -768,6 +769,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const { id } = c.req.valid("param");
 
     const task = await getTask(id);
+    notifyTaskViewed({ taskId: task.id, projectId: task.projectId });
 
     return c.json(task, 200);
   })

@@ -119,6 +119,11 @@ export type TaskRelationDeletedEvent = {
   source?: "kaneo" | "gitlab";
 };
 
+export type TaskViewedEvent = {
+  taskId: string;
+  projectId: string;
+};
+
 export type TaskEvent =
   | TaskCreatedEvent
   | TaskStatusChangedEvent
@@ -132,7 +137,8 @@ export type TaskEvent =
   | TaskAssigneeChangedEvent
   | TaskUnassignedEvent
   | TaskRelationCreatedEvent
-  | TaskRelationDeletedEvent;
+  | TaskRelationDeletedEvent
+  | TaskViewedEvent;
 
 export type ExternalMetadata = {
   type: "issue" | "pull_request" | "branch";
@@ -180,6 +186,8 @@ export type IntegrationPlugin = {
   onTaskUnassigned?: TaskEventHandler<TaskUnassignedEvent>;
   onTaskRelationCreated?: TaskEventHandler<TaskRelationCreatedEvent>;
   onTaskRelationDeleted?: TaskEventHandler<TaskRelationDeletedEvent>;
+  // Lets providers without webhooks for some changes reconcile on demand; throttled per task.
+  onTaskViewed?: TaskEventHandler<TaskViewedEvent>;
 
   handleWebhook?: WebhookHandler;
   getTaskMetadata?: MetadataProvider;
