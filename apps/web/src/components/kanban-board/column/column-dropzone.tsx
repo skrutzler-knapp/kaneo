@@ -15,9 +15,10 @@ type ColumnDropzoneProps = {
   disableDragDrop?: boolean;
   onIsOverChange?: (isOver: boolean) => void;
   className?: string;
-  gridColumn: number;
-  boardRowCount: number;
-  rowByTaskId: ReadonlyMap<string, number>;
+  layout: "flex" | "grid";
+  gridColumn?: number;
+  boardRowCount?: number;
+  rowByTaskId?: ReadonlyMap<string, number>;
   subtasksByParentId: ReadonlyMap<string, Task[]>;
   expandedParentIds: ReadonlySet<string>;
   groupSubtasks: boolean;
@@ -29,6 +30,7 @@ export function ColumnDropzone({
   disableDragDrop = false,
   onIsOverChange,
   className,
+  layout,
   gridColumn,
   boardRowCount,
   rowByTaskId,
@@ -54,32 +56,44 @@ export function ColumnDropzone({
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        "relative min-h-full rounded-xl border p-2 transition-colors duration-150",
-        isOver
-          ? "border-ring/40 bg-accent/50 ring-2 ring-ring/30"
-          : "border-border/70 bg-muted/30 dark:bg-card/60",
-        className,
-      )}
-      style={{
-        gridColumn,
-        gridRow: `2 / span ${Math.max(boardRowCount, 1)}`,
-        display: "grid",
-        gridTemplateRows: "subgrid",
-        alignContent: "start",
-      }}
+      className={
+        layout === "grid"
+          ? cn(
+              "relative min-h-full rounded-xl border p-2 transition-colors duration-150",
+              isOver
+                ? "border-ring/40 bg-accent/50 ring-2 ring-ring/30"
+                : "border-border/70 bg-muted/30 dark:bg-card/60",
+              className,
+            )
+          : cn("flex-1 min-h-0", className)
+      }
+      style={
+        layout === "grid"
+          ? {
+              gridColumn,
+              gridRow: `2 / span ${Math.max(boardRowCount ?? 1, 1)}`,
+              display: "grid",
+              gridTemplateRows: "subgrid",
+              alignContent: "start",
+            }
+          : undefined
+      }
     >
       <SortableContext
         items={column.tasks}
         strategy={verticalListSortingStrategy}
       >
-        <div className="contents">
+        <div className={layout === "grid" ? "contents" : "flex flex-col gap-2"}>
           <AnimatePresence initial={false} mode="popLayout">
             {column.tasks.map((task) => (
               <motion.div
                 key={task.id}
-                className="min-w-0 self-start"
-                style={{ gridRow: (rowByTaskId.get(task.id) ?? 0) + 1 }}
+                className={layout === "grid" ? "min-w-0 self-start" : undefined}
+                style={
+                  layout === "grid"
+                    ? { gridRow: (rowByTaskId?.get(task.id) ?? 0) + 1 }
+                    : undefined
+                }
                 initial={
                   reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
                 }

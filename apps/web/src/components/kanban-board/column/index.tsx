@@ -9,9 +9,10 @@ import { ColumnHeader } from "./column-header";
 type ColumnProps = {
   column: ProjectWithTasks["columns"][number];
   disableDragDrop?: boolean;
-  columnIndex: number;
-  boardRowCount: number;
-  rowByTaskId: ReadonlyMap<string, number>;
+  layout: "flex" | "grid";
+  columnIndex?: number;
+  boardRowCount?: number;
+  rowByTaskId?: ReadonlyMap<string, number>;
   subtasksByParentId: ReadonlyMap<string, Task[]>;
   expandedParentIds: ReadonlySet<string>;
   groupSubtasks: boolean;
@@ -63,6 +64,7 @@ export const columnVariants = cva(
 function Column({
   column,
   disableDragDrop = false,
+  layout,
   columnIndex,
   boardRowCount,
   rowByTaskId,
@@ -73,6 +75,32 @@ function Column({
 }: ColumnProps) {
   const [isDropzoneOver, setIsDropzoneOver] = useState(false);
   const { background } = useBackgroundStore();
+  const columnClassName = columnVariants({
+    isDropzoneOver,
+    backgroundImage: !!background,
+  });
+
+  if (layout === "flex") {
+    return (
+      <div className={columnClassName}>
+        <div className="shrink-0 border-b border-border/60 px-3 py-2">
+          <ColumnHeader column={column} />
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pt-1 pb-2 [-webkit-overflow-scrolling:touch]">
+          <ColumnDropzone
+            column={column}
+            disableDragDrop={disableDragDrop}
+            onIsOverChange={setIsDropzoneOver}
+            layout="flex"
+            subtasksByParentId={subtasksByParentId}
+            expandedParentIds={expandedParentIds}
+            groupSubtasks={groupSubtasks}
+            onToggleSubtasks={onToggleSubtasks}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -82,7 +110,7 @@ function Column({
             ? "border-ring/40 bg-accent/80"
             : "border-border/70 bg-background/95 backdrop-blur"
         }`}
-        style={{ gridColumn: columnIndex + 1, gridRow: 1 }}
+        style={{ gridColumn: (columnIndex ?? 0) + 1, gridRow: 1 }}
       >
         <ColumnHeader column={column} />
       </div>
@@ -90,7 +118,8 @@ function Column({
         column={column}
         disableDragDrop={disableDragDrop}
         onIsOverChange={setIsDropzoneOver}
-        gridColumn={columnIndex + 1}
+        layout="grid"
+        gridColumn={(columnIndex ?? 0) + 1}
         boardRowCount={boardRowCount}
         rowByTaskId={rowByTaskId}
         subtasksByParentId={subtasksByParentId}
