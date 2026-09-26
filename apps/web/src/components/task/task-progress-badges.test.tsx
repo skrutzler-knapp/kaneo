@@ -16,8 +16,10 @@ vi.mock("@/store/user-preferences", () => ({
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, values: { completed: number; total: number }) =>
-      `${values.completed} of ${values.total} ${key.includes("subtasks") ? "subtasks" : "checklist items"} completed`,
+    t: (key: string, values?: { completed: number; total: number }) =>
+      values
+        ? `${values.completed} of ${values.total} ${key.includes("subtasks") ? "subtasks" : "checklist items"} completed`
+        : key,
   }),
 }));
 
@@ -47,6 +49,31 @@ describe("TaskProgressBadges", () => {
     expect(subtasks).toHaveClass("text-success-foreground");
     expect(checklist).toHaveTextContent("1/3");
     expect(checklist).not.toHaveClass("text-success-foreground");
+  });
+
+  it("toggles grouped subtasks from the subtask badge without bubbling", () => {
+    const onToggle = vi.fn();
+    const onCardClick = vi.fn();
+    render(
+      // biome-ignore lint/a11y/useKeyWithClickEvents: stands in for the card.
+      // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the card.
+      <div onClick={onCardClick}>
+        <TaskProgressBadges
+          task={{
+            description: null,
+            subtaskCounts: { completed: 1, total: 3 },
+          }}
+          subtaskToggle={{ expanded: false, onToggle }}
+        />
+      </div>,
+    );
+    const toggle = screen.getByRole("button", {
+      name: "tasks:subtasks.expandAction, 1 of 3 subtasks completed",
+    });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(onCardClick).not.toHaveBeenCalled();
   });
 
   it("shows subtasks when description checklist counts are disabled", () => {

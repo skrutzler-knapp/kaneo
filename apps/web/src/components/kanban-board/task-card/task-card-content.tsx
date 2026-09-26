@@ -3,9 +3,6 @@ import {
   Calendar,
   CalendarClock,
   CalendarX,
-  ChevronDown,
-  ChevronUp,
-  ListTree,
   SlidersHorizontal,
 } from "lucide-react";
 import { memo, useMemo, useState } from "react";
@@ -327,7 +324,7 @@ function TaskCardContent({
                 </HoverCard>
               )}
 
-              <TaskProgressBadges task={task} />
+              <TaskProgressBadges task={task} subtaskToggle={groupSubtasks && subtaskCount > 0 && onToggleSubtasks ? { expanded: subtasksExpanded, onToggle: onToggleSubtasks } : undefined} />
 
               {showDueDates && task.dueDate && (
                 <div
@@ -353,18 +350,6 @@ function TaskCardContent({
 
               <TaskPullRequests externalLinks={task.externalLinks} />
             </div>
-            {groupSubtasks && subtaskCount > 0 && onToggleSubtasks && (
-              <button type="button" aria-expanded={subtasksExpanded}
-                aria-label={t(subtasksExpanded ? "tasks:subtasks.collapseAction" : "tasks:subtasks.expandAction", { count: subtaskCount })}
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => { event.stopPropagation(); onToggleSubtasks(); }}
-                className="mt-2 inline-flex min-h-7 items-center gap-1.5 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <ListTree className="size-4" />
-                <span>{t(subtasksExpanded ? "tasks:subtasks.collapseAction" : "tasks:subtasks.expandAction")}</span>
-                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{subtaskCount}</span>
-                {subtasksExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-              </button>
-            )}
           </div>
         </ContextMenuTrigger>
 
