@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 
-vi.mock("../../../../../apps/api/src/utils/assert-public-destination", async () => {
-  const actual = await vi.importActual<
-    typeof import("../../../../../apps/api/src/utils/assert-public-destination")
-  >("../../../../../apps/api/src/utils/assert-public-destination");
-  return { ...actual, assertPublicDestination: vi.fn() };
-});
+vi.mock(
+  "../../../../../apps/api/src/utils/assert-public-destination",
+  async () => {
+    const actual = await vi.importActual<
+      typeof import("../../../../../apps/api/src/utils/assert-public-destination")
+    >("../../../../../apps/api/src/utils/assert-public-destination");
+    return { ...actual, assertPublicDestination: vi.fn() };
+  },
+);
 
 vi.stubGlobal("fetch", mockFetch);
 

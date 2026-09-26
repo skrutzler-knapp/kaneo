@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => {
     createGitlabClient: vi.fn(),
     addLabelsToIssueGitlab: vi.fn(),
     syncGitlabLabelsToTask: vi.fn(),
-    syncGitlabLabelCatalog: vi.fn(),
+    ensureGitlabWorkspaceLabels: vi.fn(),
     syncGitlabRelationsForIssues: vi.fn(),
     db: {
       transaction: async (run: (tx: unknown) => Promise<unknown>) =>
@@ -106,8 +106,8 @@ vi.mock(
 vi.mock(
   "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-label-catalog",
   () => ({
-    syncGitlabLabelCatalog: (...args: unknown[]) =>
-      mocks.syncGitlabLabelCatalog(...args),
+    ensureGitlabWorkspaceLabels: (...args: unknown[]) =>
+      mocks.ensureGitlabWorkspaceLabels(...args),
   }),
 );
 
@@ -168,7 +168,11 @@ beforeEach(() => {
   });
   mocks.createExternalLink.mockResolvedValue({ id: "link-1" });
   mocks.publishEvent.mockResolvedValue(undefined);
-  mocks.syncGitlabRelationsForIssues.mockResolvedValue({ created: 0, deleted: 0 });
+  mocks.syncGitlabRelationsForIssues.mockResolvedValue({
+    created: 0,
+    deleted: 0,
+  });
+  mocks.ensureGitlabWorkspaceLabels.mockResolvedValue(undefined);
 });
 
 describe("handleGitlabIssueOpened", () => {
@@ -249,7 +253,7 @@ describe("handleGitlabIssueOpened", () => {
     );
   });
 
-  it("imports every custom GitLab label when creating a task", async () => {
+  it("ensures workspace labels from the issue payload", async () => {
     mocks.projectFindFirst.mockResolvedValue({
       id: "project-1",
       workspaceId: "workspace-1",
@@ -269,11 +273,59 @@ describe("handleGitlabIssueOpened", () => {
       "workspace-1",
       payload.labels,
     );
-    expect(mocks.syncGitlabLabelCatalog).toHaveBeenCalledWith(
-      expect.objectContaining({ projectPath: "usekaneo/kaneo" }),
+    expect(mocks.ensureGitlabWorkspaceLabels).toHaveBeenCalledWith(
       "project-1",
       "workspace-1",
+      payload.labels,
     );
+  });
+
+  it("publishes task.created before best-effort relation synchronization", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mocks.syncGitlabRelationsForIssues.mockRejectedValueOnce(
+      new Error("Work item hierarchy unavailable"),
+    );
+
+    await handleGitlabIssueOpened(issueOpenedPayload([]));
+
+    expect(mocks.publishEvent).toHaveBeenCalledWith(
+      "task.created",
+      expect.objectContaining({ taskId: "task-1" }),
+    );
+    expect(
+      mocks.syncGitlabRelationsForIssues.mock.invocationCallOrder[0],
+    ).toBeGreaterThan(mocks.publishEvent.mock.invocationCallOrder[0]);
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to sync GitLab task relations:",
+      expect.any(Error),
+    );
+    consoleError.mockRestore();
+  });
+
+  it("continues past relation failures for an existing issue link", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+    });
+    mocks.syncGitlabRelationsForIssues.mockRejectedValueOnce(
+      new Error("Work item hierarchy unavailable"),
+    );
+
+    await expect(
+      handleGitlabIssueOpened(issueOpenedPayload([])),
+    ).resolves.toBeUndefined();
+
+    expect(mocks.insertedValues).toHaveLength(0);
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to sync GitLab task relations:",
+      expect.any(Error),
+    );
+    consoleError.mockRestore();
   });
 
   it("keeps a confidential issue out of the workspace", async () => {

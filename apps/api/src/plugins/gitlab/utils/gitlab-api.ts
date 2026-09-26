@@ -447,39 +447,14 @@ export function createGitlabClient(
       const uniqueIids = [...new Set(issueIids)].map(String);
 
       for (let offset = 0; offset < uniqueIids.length; offset += 50) {
-        const response = required(
-          await gitlabFetch<GitlabGraphqlResponse<GitlabHierarchyData>>(
-            baseUrl,
-            accessToken,
-            tokenType,
-            "",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                query: WORK_ITEM_HIERARCHY_QUERY,
-                variables: {
-                  fullPath: normalizeProjectPath(projectPath),
-                  iids: uniqueIids.slice(offset, offset + 50),
-                },
-              }),
-            },
-            "graphql",
-          ),
-          "work item hierarchy",
+        const response = await graphql<GitlabHierarchyData>(
+          WORK_ITEM_HIERARCHY_QUERY,
+          {
+            fullPath: normalizeProjectPath(projectPath),
+            iids: uniqueIids.slice(offset, offset + 50),
+          },
         );
-
-        if (response.errors?.length) {
-          throw new GitlabApiError(
-            response.errors.map((error) => error.message).join("; "),
-            400,
-            "HTTP_ERROR",
-          );
-        }
-
-        const project = required(
-          response.data?.project ?? undefined,
-          "project",
-        );
+        const project = required(response.project ?? undefined, "project");
 
         for (const workItem of project.workItems.nodes) {
           const hierarchy = workItem.widgets.find(

@@ -4,7 +4,7 @@ import { handleTaskCommentCreated } from "./events/task-comment-created";
 import { handleTaskCreated } from "./events/task-created";
 import { handleTaskDescriptionChanged } from "./events/task-description-changed";
 import { handleTaskPriorityChanged } from "./events/task-priority-changed";
-import { handleTaskRelationCreated } from "./events/task-relation-created-idempotent";
+import { handleTaskRelationCreated } from "./events/task-relation-created";
 import { handleTaskRelationDeleted } from "./events/task-relation-deleted";
 import { handleTaskStatusChanged } from "./events/task-status-changed";
 import { handleTaskTitleChanged } from "./events/task-title-changed";

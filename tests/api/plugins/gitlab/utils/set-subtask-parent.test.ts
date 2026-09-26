@@ -5,19 +5,23 @@ const mocks = vi.hoisted(() => ({
   listSubtaskRelations: vi.fn(),
 }));
 
-vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api", async () => {
-  const actual = await vi.importActual<
-    typeof import("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api")
-  >("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api");
-  return {
-    ...actual,
-    createGitlabClient: () => ({
-      setSubtaskParent: (...args: unknown[]) => mocks.setSubtaskParent(...args),
-      listSubtaskRelations: (...args: unknown[]) =>
-        mocks.listSubtaskRelations(...args),
-    }),
-  };
-});
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api",
+  async () => {
+    const actual = await vi.importActual<
+      typeof import("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api")
+    >("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api");
+    return {
+      ...actual,
+      createGitlabClient: () => ({
+        setSubtaskParent: (...args: unknown[]) =>
+          mocks.setSubtaskParent(...args),
+        listSubtaskRelations: (...args: unknown[]) =>
+          mocks.listSubtaskRelations(...args),
+      }),
+    };
+  },
+);
 
 const { GitlabApiError } = await import(
   "../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api"

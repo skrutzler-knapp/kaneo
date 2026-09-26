@@ -34,10 +34,11 @@ import type {
 } from "../utils/payload";
 import { labelColor, labelTitles } from "../utils/payload";
 import { isSystemLabelName } from "../utils/system-labels";
-import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import { ensureGitlabWorkspaceLabels } from "../utils/sync-gitlab-label-catalog";
 import { syncGitlabRelationsForIssues } from "../utils/sync-gitlab-task-relations";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
+// Edits and label changes arrive together as one "update" action.
 type IssueUpdatedPayload = {
   object_attributes: {
     iid: number;
@@ -163,7 +164,9 @@ export async function handleGitlabIssueUpdated(
     project.web_url,
     project.path_with_namespace,
   );
-  if (!baseUrl) return;
+  if (!baseUrl) {
+    return;
+  }
 
   const integrations = await findAllIntegrationsByGitlabProject(
     baseUrl,
@@ -212,13 +215,20 @@ export async function handleGitlabIssueUpdated(
             { externalLinkId: externalLink.id, field: "issue" },
           );
           const config = JSON.parse(integration.config) as GitlabConfig;
-          afterCommit(async () => { await syncGitlabRelationsForIssues(task.projectId, integration.id, config.projectPath, [issue.iid]); });
+          afterCommit(async () => {
+            try {
+              await syncGitlabRelationsForIssues(task.projectId, integration.id, config.projectPath, [issue.iid]);
+            } catch (error) {
+              console.error("Failed to sync GitLab task relations:", error);
+            }
+          });
           if (touchedAssignees && config.gitlabOwnsAssignees) {
             const gitlabAssignees = snapshotGitlabAssignees(payload.assignees ?? changes?.assignees?.current);
             metadata = { ...metadata, gitlabAssignees };
             await updateExternalLink(externalLink.id, { metadata: { gitlabAssignees } }, db);
             if (task.userId) {
               await db.update(taskTable).set({ userId: null }).where(linkedTaskScope(task.id, integration.projectId));
+              afterCommit(() => publishEvent("task.unassigned", { taskId: task.id, projectId: task.projectId, title: task.title, type: "unassigned", userId: null }));
               task.userId = null;
             }
             afterCommit(() => publishEvent("task.updated", { taskId: task.id, projectId: task.projectId }));
@@ -343,7 +353,7 @@ export async function handleGitlabIssueUpdated(
             const workspaceId = task.project.workspaceId;
             afterCommit(async () => {
               try {
-                await syncGitlabLabelCatalog(JSON.parse(integration.config) as GitlabConfig, task.projectId, workspaceId);
+                await ensureGitlabWorkspaceLabels(task.projectId, workspaceId, currentLabels);
               } catch (error) {
                 console.error("Failed to sync GitLab label catalog:", error);
               }

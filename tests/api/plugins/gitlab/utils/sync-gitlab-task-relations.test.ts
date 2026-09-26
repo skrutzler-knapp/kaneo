@@ -64,7 +64,10 @@ const mocks = vi.hoisted(() => {
     insert: vi.fn(() => ({
       values: (values: Omit<(typeof taskRelations)[number], "id">) => ({
         returning: async () => {
-          const relation = { ...values, id: `relation-${taskRelations.length + 1}` };
+          const relation = {
+            ...values,
+            id: `relation-${taskRelations.length + 1}`,
+          };
           taskRelations.push(relation);
           return [relation];
         },
@@ -121,10 +124,13 @@ vi.mock("../../../../../apps/api/src/database", () => ({ default: mocks.db }));
 vi.mock("../../../../../apps/api/src/events", () => ({
   publishEvent: (...args: unknown[]) => mocks.publishEvent(...args),
 }));
-vi.mock("../../../../../apps/api/src/plugins/github/services/link-manager", () => ({
-  getExternalLinksByIntegration: (...args: unknown[]) =>
-    mocks.getExternalLinksByIntegration(...args),
-}));
+vi.mock(
+  "../../../../../apps/api/src/plugins/github/services/link-manager",
+  () => ({
+    getExternalLinksByIntegration: (...args: unknown[]) =>
+      mocks.getExternalLinksByIntegration(...args),
+  }),
+);
 vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api", () => ({
   createGitlabClient: (...args: unknown[]) => mocks.createGitlabClient(...args),
 }));

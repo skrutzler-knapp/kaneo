@@ -1,8 +1,5 @@
 import type { GitlabConfig } from "../config";
-import {
-  GitlabApiError,
-  createGitlabClient,
-} from "./gitlab-api";
+import { createGitlabClient, GitlabApiError } from "./gitlab-api";
 
 export async function setGitlabSubtaskParent(
   config: GitlabConfig,

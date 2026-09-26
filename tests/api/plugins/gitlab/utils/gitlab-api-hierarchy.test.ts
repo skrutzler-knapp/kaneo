@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 
-vi.mock("../../../../../apps/api/src/utils/assert-public-destination", async () => {
-  const actual = await vi.importActual<
-    typeof import("../../../../../apps/api/src/utils/assert-public-destination")
-  >("../../../../../apps/api/src/utils/assert-public-destination");
-  return { ...actual, assertPublicDestination: vi.fn() };
-});
+vi.mock(
+  "../../../../../apps/api/src/utils/assert-public-destination",
+  async () => {
+    const actual = await vi.importActual<
+      typeof import("../../../../../apps/api/src/utils/assert-public-destination")
+    >("../../../../../apps/api/src/utils/assert-public-destination");
+    return { ...actual, assertPublicDestination: vi.fn() };
+  },
+);
 
 vi.stubGlobal("fetch", mockFetch);
 
@@ -66,7 +69,9 @@ describe("GitLab work item hierarchy", () => {
     await client().setSubtaskParent("acme/web", 1, 4);
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    const mutationRequest = JSON.parse(mockFetch.mock.calls[1][1].body as string);
+    const mutationRequest = JSON.parse(
+      mockFetch.mock.calls[1][1].body as string,
+    );
     expect(mutationRequest.query).toContain("workItemsHierarchyReorder");
     expect(mutationRequest.variables).toEqual({
       parentId: "parent-global-id",
@@ -144,7 +149,9 @@ describe("GitLab work item hierarchy", () => {
 
     await client().removeSubtaskParent("acme/web", 4);
 
-    const mutationRequest = JSON.parse(mockFetch.mock.calls[1][1].body as string);
+    const mutationRequest = JSON.parse(
+      mockFetch.mock.calls[1][1].body as string,
+    );
     expect(mutationRequest.variables).toEqual({
       parentId: null,
       childId: "child-global-id",

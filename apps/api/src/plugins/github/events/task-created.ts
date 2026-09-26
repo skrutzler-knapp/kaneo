@@ -8,8 +8,8 @@ import { syncTaskFieldLabels } from "../../sync/sync-task-field-labels";
 import { eq } from "drizzle-orm";
 import db from "../../../database";
 import { projectTable } from "../../../database/schema";
-import type { PluginContext, TaskCreatedEvent } from "../../types";
 import { getCustomTaskLabelNames } from "../../task-labels";
+import type { PluginContext, TaskCreatedEvent } from "../../types";
 import { type GitHubConfig, hasVerifiedGitHubBinding } from "../config";
 import {
   createExternalLink,

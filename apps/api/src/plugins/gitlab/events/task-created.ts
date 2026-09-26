@@ -20,9 +20,10 @@ import {
   createRelatedIssueLink,
   isUnsupportedGitlabHierarchyParent,
 } from "../utils/create-related-issue-link";
-import { syncTaskLabelsToGitlab } from "../utils/sync-task-labels-to-gitlab";
+import { addLabelsToIssueGitlab } from "../utils/labels";
 import { setGitlabSubtaskParent } from "../utils/set-subtask-parent";
 import { recordGitlabTaskRelation } from "../utils/sync-gitlab-task-relations";
+import { syncTaskLabelsToGitlab } from "../utils/sync-task-labels-to-gitlab";
 
 async function syncSubtaskRelations(taskId: string, context: PluginContext) {
   const relations = await findSubtaskRelationsByTask(taskId);

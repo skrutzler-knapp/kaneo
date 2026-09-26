@@ -1,6 +1,6 @@
+import { getCustomTaskLabelNames } from "../../task-labels";
 import type { GitlabConfig } from "../config";
 import { addLabelsToIssueGitlab } from "./labels";
-import { getCustomTaskLabelNames } from "../../task-labels";
 
 export async function syncTaskLabelsToGitlab(
   config: GitlabConfig,
