@@ -15,7 +15,6 @@ import type Task from "@/types/task";
 type SubtaskExpansionPanelProps = {
   parent: Task;
   subtasks: Task[];
-  subtasksByParentId: ReadonlyMap<string, Task[]>;
   taskOrderById: ReadonlyMap<string, number>;
   columns: ProjectWithTasks["columns"];
   row: number;
@@ -29,7 +28,6 @@ function SubtaskLane({
   status,
   name,
   tasks,
-  subtasksByParentId,
   disableDragDrop,
   onAddSubtask,
 }: {
@@ -37,7 +35,6 @@ function SubtaskLane({
   status: string;
   name: string;
   tasks: Task[];
-  subtasksByParentId: ReadonlyMap<string, Task[]>;
   disableDragDrop: boolean;
   onAddSubtask: (status: string) => void;
 }) {
@@ -82,7 +79,6 @@ function SubtaskLane({
               key={task.id}
               task={task}
               disableDragDrop={disableDragDrop}
-              nestedSubtaskCount={subtasksByParentId.get(task.id)?.length ?? 0}
               dragData={{ type: "subtask", parentTaskId }}
             />
           ))}
@@ -99,7 +95,6 @@ export default function SubtaskExpansionPanel({
   row,
   anchorColumnIndex,
   columnCount,
-  subtasksByParentId,
   taskOrderById,
   disableDragDrop = false,
 }: SubtaskExpansionPanelProps) {
@@ -156,7 +151,6 @@ export default function SubtaskExpansionPanel({
             status={lane.id}
             name={lane.name}
             tasks={tasksByStatus.get(lane.id) ?? []}
-            subtasksByParentId={subtasksByParentId}
             disableDragDrop={disableDragDrop}
             onAddSubtask={(status) => {
               setCreateStatus(status);
