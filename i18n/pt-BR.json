@@ -2533,9 +2533,9 @@
 			"deleteDialogDescription": "Isso removerá permanentemente a tarefa e todos os seus dados. Você não pode desfazer esta ação.",
 			"deleteAction": "Excluir tarefa",
 			"completeAria": "Marcar subtarefa como concluída",
-"progress": "{{completed}} de {{total}} subtarefas concluídas",
+			"progress": "{{completed}} de {{total}} subtarefas concluídas",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2549,7 +2549,8 @@
 			"taskBranchCopied": "Nome da branch copiado",
 			"start": "Início",
 			"startDate": "Data de início",
-			"noDate": "Sem data"
+			"noDate": "Sem data",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Mover tarefa",

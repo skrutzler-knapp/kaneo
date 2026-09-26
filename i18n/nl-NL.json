@@ -2518,9 +2518,9 @@
 			"deleteDialogDescription": "Dit zal de taak en alle data permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
 			"deleteAction": "Taak verwijderen",
 			"completeAria": "Markeer subtaak als voltooid",
-"progress": "{{completed}} van {{total}} subtaken voltooid",
+			"progress": "{{completed}} van {{total}} subtaken voltooid",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2534,7 +2534,8 @@
 			"taskBranchCopied": "Branchnaam gekopieerd",
 			"start": "Start",
 			"startDate": "Startdatum",
-			"noDate": "Geen datum"
+			"noDate": "Geen datum",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"popover": {
 			"assignee": {

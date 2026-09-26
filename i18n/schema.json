@@ -6141,6 +6141,15 @@
 						"commentTaskLinkHint": {
 							"type": "string"
 						},
+						"assigneeSourceTitle": {
+							"type": "string"
+						},
+						"assigneeSourceHint": {
+							"type": "string"
+						},
+						"assigneeEditLocked": {
+							"type": "string"
+						},
 						"webhookTitle": {
 							"type": "string"
 						},
@@ -6268,6 +6277,9 @@
 						"projectHint",
 						"commentTaskLinkTitle",
 						"commentTaskLinkHint",
+						"assigneeSourceTitle",
+						"assigneeSourceHint",
+						"assigneeEditLocked",
 						"webhookTitle",
 						"webhookHint",
 						"webhookSecretLabel",
@@ -10151,6 +10163,15 @@
 						"title": {
 							"type": "string"
 						},
+						"groupToggle": {
+							"type": "string"
+						},
+						"expandAction": {
+							"type": "string"
+						},
+						"collapseAction": {
+							"type": "string"
+						},
 						"inputPlaceholder": {
 							"type": "string"
 						},
@@ -10161,6 +10182,9 @@
 							"type": "string"
 						},
 						"createError": {
+							"type": "string"
+						},
+						"relationCreateError": {
 							"type": "string"
 						},
 						"deleteSuccess": {
@@ -10186,10 +10210,14 @@
 						"progress",
 						"noCompletionColumn",
 						"title",
+						"groupToggle",
+						"expandAction",
+						"collapseAction",
 						"inputPlaceholder",
 						"addAction",
 						"empty",
 						"createError",
+						"relationCreateError",
 						"deleteSuccess",
 						"deleteError",
 						"deleteDialogTitle",
@@ -10228,6 +10256,9 @@
 						},
 						"noDate": {
 							"type": "string"
+						},
+						"copyFailed": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -10239,7 +10270,8 @@
 						"taskBranchCopied",
 						"start",
 						"startDate",
-						"noDate"
+						"noDate",
+						"copyFailed"
 					]
 				},
 				"move": {

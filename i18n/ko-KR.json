@@ -2503,9 +2503,9 @@
 			"deleteDialogDescription": "작업과 모든 데이터가 영구적으로 제거됩니다. 이 작업은 취소할 수 없습니다.",
 			"deleteAction": "작업 삭제",
 			"completeAria": "하위 작업을 완료로 표시",
-"progress": "하위 작업 {{total}}개 중 {{completed}}개 완료",
+			"progress": "하위 작업 {{total}}개 중 {{completed}}개 완료",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2519,7 +2519,8 @@
 			"taskBranchCopied": "브랜치 이름을 복사했습니다",
 			"start": "시작",
 			"startDate": "시작일",
-			"noDate": "날짜 없음"
+			"noDate": "날짜 없음",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "작업 이동",

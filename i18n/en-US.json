@@ -2535,7 +2535,8 @@
 			"taskBranchCopied": "Copied branch name",
 			"start": "Start",
 			"startDate": "Start date",
-			"noDate": "No date"
+			"noDate": "No date",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Move task",

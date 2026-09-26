@@ -2518,9 +2518,9 @@
 			"deleteDialogDescription": "यह कार्य और इसका सभी डेटा स्थायी रूप से हटा दिया जाएगा। यह कार्रवाई पूर्ववत नहीं की जा सकती।",
 			"deleteAction": "कार्य हटाएँ",
 			"completeAria": "उप-कार्य को पूर्ण चिह्नित करें",
-"progress": "{{total}} में से {{completed}} उपकार्य पूरे हुए",
+			"progress": "{{total}} में से {{completed}} उपकार्य पूरे हुए",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2534,7 +2534,8 @@
 			"taskBranchCopied": "ब्रांच का नाम कॉपी किया गया",
 			"start": "शुरू",
 			"startDate": "शुरू की तारीख",
-			"noDate": "कोई तारीख नहीं"
+			"noDate": "कोई तारीख नहीं",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "कार्य ले जाएँ",

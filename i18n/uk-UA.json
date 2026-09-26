@@ -2548,9 +2548,9 @@
 			"deleteDialogDescription": "Це назавжди видалить завдання та всі його дані. Цю дію неможливо скасувати.",
 			"deleteAction": "Видалити завдання",
 			"completeAria": "Позначити підзавдання виконаним",
-"progress": "Виконано підзавдань: {{completed}} із {{total}}",
+			"progress": "Виконано підзавдань: {{completed}} із {{total}}",
 			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-"collapseAction": "Hide subtasks",
+			"collapseAction": "Hide subtasks",
 			"expandAction": "Show subtasks",
 			"groupToggle": "Group subtasks",
 			"relationCreateError": "Task created, but it could not be linked as a subtask."
@@ -2564,7 +2564,8 @@
 			"taskBranchCopied": "Назву гілки скопійовано",
 			"start": "Початок",
 			"startDate": "Дата початку",
-			"noDate": "Немає дати"
+			"noDate": "Немає дати",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Перемістити завдання",

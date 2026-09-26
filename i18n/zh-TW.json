@@ -1739,7 +1739,10 @@
 			"webhookShow": "顯示",
 			"webhookTitle": "Webhook",
 			"loadProjectsError": "無法載入專案",
-			"importPermissionHint": "匯入需要建立與更新任務的權限。"
+			"importPermissionHint": "匯入需要建立與更新任務的權限。",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo.",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeSourceTitle": "GitLab manages assignees"
 		},
 		"calendarFeeds": {
 			"title": "行事曆訂閱源",
@@ -2501,7 +2504,11 @@
 			"deleteAction": "刪除任務",
 			"completeAria": "將子任務標記為完成",
 			"progress": "已完成 {{completed}}/{{total}} 個子任務",
-			"noCompletionColumn": "此專案沒有對應的欄可用來完成或重新開啟這個子任務。"
+			"noCompletionColumn": "此專案沒有對應的欄可用來完成或重新開啟這個子任務。",
+			"collapseAction": "Hide subtasks",
+			"expandAction": "Show subtasks",
+			"groupToggle": "Group subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "屬性",
@@ -2512,7 +2519,8 @@
 			"taskBranchCopied": "已複製分支名稱",
 			"start": "開始",
 			"startDate": "開始日期",
-			"noDate": "無日期"
+			"noDate": "無日期",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "移動任務",

@@ -141,7 +141,7 @@ export default function TaskPropertiesSidebar({
       ),
     );
     if (!copied) {
-      toast.error(t("team:invitations.copyFailed"));
+      toast.error(t("tasks:properties.copyFailed"));
       return;
     }
     toast.message(t("tasks:properties.taskLinkCopied"));
@@ -156,7 +156,7 @@ export default function TaskPropertiesSidebar({
     );
     const copied = await copyToClipboard(branchName);
     if (!copied) {
-      toast.error(t("team:invitations.copyFailed"));
+      toast.error(t("tasks:properties.copyFailed"));
       return;
     }
     toast.message(t("tasks:properties.taskBranchCopied"));

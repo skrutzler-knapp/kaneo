@@ -1740,7 +1740,10 @@
 			"webhookShow": "显示",
 			"webhookTitle": "Webhook",
 			"loadProjectsError": "项目加载失败",
-			"importPermissionHint": "导入需要创建和更新任务的权限。"
+			"importPermissionHint": "导入需要创建和更新任务的权限。",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo.",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeSourceTitle": "GitLab manages assignees"
 		},
 		"calendarFeeds": {
 			"title": "日历订阅",
@@ -2516,7 +2519,8 @@
 			"taskBranchCopied": "已复制分支名称",
 			"start": "开始",
 			"startDate": "开始日期",
-			"noDate": "无日期"
+			"noDate": "无日期",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "移动任务",
