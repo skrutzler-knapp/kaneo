@@ -192,7 +192,6 @@ function KanbanBoard({
       subtasks: Task[];
       taskOrderById: ReadonlyMap<string, number>;
       row: number;
-      anchorColumnIndex: number;
     }> = [];
     const cursors = columns.map(() => 0);
     let row = 0;
@@ -221,7 +220,6 @@ function KanbanBoard({
             parent: task,
             subtasks,
             taskOrderById,
-            anchorColumnIndex: columnIndex,
           };
         }
       }
@@ -543,7 +541,6 @@ function KanbanBoard({
                 key={expansion.parent.id}
                 {...expansion}
                 columns={boardState.columns}
-                columnCount={boardState.columns.length}
                 disableDragDrop={disableDragDrop}
               />
             ))}
