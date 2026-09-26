@@ -38,7 +38,9 @@ export default function SubtaskAssigneePopover({
     INITIAL_VISIBLE_USERS,
   );
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
-  const assigneesManagedByGitlab = useGitlabAssigneeOwnership(tasks[0]?.projectId ?? "");
+  const assigneesManagedByGitlab = useGitlabAssigneeOwnership(
+    tasks[0]?.projectId ?? "",
+  );
   const { data: projectMembers } = useGetMembersOfProjects({
     workspaceId,
     projectIds: tasks.map((task) => task.projectId),

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => ({
   existingLabels: [] as Array<{
@@ -43,9 +43,8 @@ vi.mock("../../../../../apps/api/src/events", () => ({
   },
 }));
 
-const { syncGitlabLabelsToTask } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-labels-to-task"
-);
+const { syncGitlabLabelsToTask } =
+  await import("../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-labels-to-task");
 
 beforeEach(() => {
   mocks.existingLabels = [];

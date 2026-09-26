@@ -1,15 +1,37 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PluginContext, TaskCreatedEvent } from "../../../../../apps/api/src/plugins/types";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type {
+  PluginContext,
+  TaskCreatedEvent,
+} from "../../../../../apps/api/src/plugins/types";
 
 vi.mock("../../../../../apps/api/src/plugins/sync/create-task-issue", () => ({
-  withTaskSyncCreation: (event: TaskCreatedEvent, _context: PluginContext, apply: (event: TaskCreatedEvent) => Promise<void>) => apply(event),
+  withTaskSyncCreation: (
+    event: TaskCreatedEvent,
+    _context: PluginContext,
+    apply: (event: TaskCreatedEvent) => Promise<void>,
+  ) => apply(event),
 }));
-vi.mock("../../../../../apps/api/src/plugins/sync/eligibility", () => ({ canSyncTask: async () => true }));
-vi.mock("../../../../../apps/api/src/plugins/sync/initialize-task-issue", () => ({
-  isIssueInitializationPending: () => false,
-  initializeTaskIssue: async (_event: unknown, _context: unknown, _link: unknown, writes: { labels: () => Promise<unknown> }) => { await writes.labels(); },
+vi.mock("../../../../../apps/api/src/plugins/sync/eligibility", () => ({
+  canSyncTask: async () => true,
 }));
-vi.mock("../../../../../apps/api/src/plugins/sync/sync-task-field-labels", () => ({ syncTaskFieldLabels: async () => undefined }));
+vi.mock(
+  "../../../../../apps/api/src/plugins/sync/initialize-task-issue",
+  () => ({
+    isIssueInitializationPending: () => false,
+    initializeTaskIssue: async (
+      _event: unknown,
+      _context: unknown,
+      _link: unknown,
+      writes: { labels: () => Promise<unknown> },
+    ) => {
+      await writes.labels();
+    },
+  }),
+);
+vi.mock(
+  "../../../../../apps/api/src/plugins/sync/sync-task-field-labels",
+  () => ({ syncTaskFieldLabels: async () => undefined }),
+);
 
 const mocks = vi.hoisted(() => ({
   addLabelsToIssueGitlab: vi.fn(),
@@ -90,9 +112,8 @@ vi.mock(
   }),
 );
 
-const { handleTaskCreated } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/events/task-created"
-);
+const { handleTaskCreated } =
+  await import("../../../../../apps/api/src/plugins/gitlab/events/task-created");
 
 const context = {
   integrationId: "integration-1",

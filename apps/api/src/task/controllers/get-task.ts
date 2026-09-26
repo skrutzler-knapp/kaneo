@@ -13,7 +13,11 @@ import {
   externalLinkTable,
   integrationTable,
 } from "../../database/schema";
-import { gitlabAssigneeDisplay, gitlabOwnsAssignees, readGitlabAssignees } from "../../plugins/gitlab/utils/assignee-sync";
+import {
+  gitlabAssigneeDisplay,
+  gitlabOwnsAssignees,
+  readGitlabAssignees,
+} from "../../plugins/gitlab/utils/assignee-sync";
 
 async function getTask(taskId: string, board = false, userId?: string) {
   const task = await db
@@ -53,14 +57,33 @@ async function getTask(taskId: string, board = false, userId?: string) {
   }
 
   let taskDetails = { ...task[0], assigneeUsername: null as string | null };
-  const [externalLink] = await db.select({
-    metadata: externalLinkTable.metadata,
-    config: integrationTable.config,
-  }).from(externalLinkTable).innerJoin(integrationTable, eq(externalLinkTable.integrationId, integrationTable.id))
-    .where(and(eq(externalLinkTable.taskId, taskId), eq(externalLinkTable.resourceType, "issue"),
-      eq(integrationTable.type, "gitlab"), eq(integrationTable.isActive, true), eq(integrationTable.projectId, taskDetails.projectId))).limit(1);
+  const [externalLink] = await db
+    .select({
+      metadata: externalLinkTable.metadata,
+      config: integrationTable.config,
+    })
+    .from(externalLinkTable)
+    .innerJoin(
+      integrationTable,
+      eq(externalLinkTable.integrationId, integrationTable.id),
+    )
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.resourceType, "issue"),
+        eq(integrationTable.type, "gitlab"),
+        eq(integrationTable.isActive, true),
+        eq(integrationTable.projectId, taskDetails.projectId),
+      ),
+    )
+    .limit(1);
   if (externalLink && gitlabOwnsAssignees(externalLink.config)) {
-    taskDetails = { ...taskDetails, userId: null, assigneeId: null, ...gitlabAssigneeDisplay(readGitlabAssignees(externalLink.metadata)) };
+    taskDetails = {
+      ...taskDetails,
+      userId: null,
+      assigneeId: null,
+      ...gitlabAssigneeDisplay(readGitlabAssignees(externalLink.metadata)),
+    };
   }
   if (!board) return taskDetails;
   const { workspaceId, ...result } = taskDetails;

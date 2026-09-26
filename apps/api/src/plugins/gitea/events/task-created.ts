@@ -121,7 +121,11 @@ async function createTaskIssue(
           )
         )?.updated_at,
       labels: async () => {
-        await addLabelsToIssueGitea(config, issueNumber, await getCustomTaskLabelNames(event.taskId));
+        await addLabelsToIssueGitea(
+          config,
+          issueNumber,
+          await getCustomTaskLabelNames(event.taskId),
+        );
         return syncTaskFieldLabels(
           event.taskId,
           context,

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => ({
   setSubtaskParent: vi.fn(),
@@ -23,12 +23,10 @@ vi.mock(
   },
 );
 
-const { GitlabApiError } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api"
-);
-const { setGitlabSubtaskParent } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent"
-);
+const { GitlabApiError } =
+  await import("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api");
+const { setGitlabSubtaskParent } =
+  await import("../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent");
 
 const config = {
   baseUrl: "https://gitlab.example.com",

@@ -65,7 +65,8 @@ async function updateTask(
   const nextAssigneeId =
     userId === undefined ? existingTask.userId : userId.trim() || null;
 
-  if (nextAssigneeId !== existingTask.userId) await assertKaneoCanChangeAssignee(projectId);
+  if (nextAssigneeId !== existingTask.userId)
+    await assertKaneoCanChangeAssignee(projectId);
   if (nextAssigneeId && nextAssigneeId !== existingTask.userId) {
     await assertAssignableUser(
       nextAssigneeId,

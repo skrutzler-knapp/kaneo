@@ -222,6 +222,7 @@ describe("handleGitlabIssueOpened", () => {
     mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([
       gitlabOwnedIntegration,
     ]);
+    mocks.lockedIntegration.mockResolvedValue([gitlabOwnedIntegration]);
     const payload = {
       ...issueOpenedPayload([]),
       assignees: [
@@ -250,6 +251,7 @@ describe("handleGitlabIssueOpened", () => {
           ],
         }),
       }),
+      mocks.db,
     );
   });
 

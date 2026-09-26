@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => ({
   findExternalLinkByTaskAndType: vi.fn(),
@@ -40,9 +40,8 @@ vi.mock(
   }),
 );
 
-const { handleTaskRelationCreated } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/events/task-relation-created"
-);
+const { handleTaskRelationCreated } =
+  await import("../../../../../apps/api/src/plugins/gitlab/events/task-relation-created");
 
 const context = {
   integrationId: "integration-1",

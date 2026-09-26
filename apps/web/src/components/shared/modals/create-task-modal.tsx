@@ -279,7 +279,8 @@ function CreateTaskModalContent({
     (candidate) => candidate.id === (explicitProjectId || selectedProjectId),
   );
   const resolvedProjectId = resolvedProject?.id ?? "";
-  const assigneesManagedByGitlab = useGitlabAssigneeOwnership(resolvedProjectId);
+  const assigneesManagedByGitlab =
+    useGitlabAssigneeOwnership(resolvedProjectId);
   const { data: projectMembers } = useGetProjectMembers({
     workspaceId: workspace?.id || "",
     projectId: resolvedProjectId,
@@ -552,7 +553,9 @@ function CreateTaskModalContent({
         await createTask({
           title: title.trim(),
           description: description.trim() || "",
-          userId: assigneesManagedByGitlab ? undefined : selectedUser?.id ?? "",
+          userId: assigneesManagedByGitlab
+            ? undefined
+            : (selectedUser?.id ?? ""),
           priority,
           projectId: resolvedProjectId,
           startDate: startDate ? startDate.toISOString() : undefined,
@@ -574,7 +577,7 @@ function CreateTaskModalContent({
 
       stagedAssetsRef.current = [];
       if (!activeRef.current) return;
-  if (!parentTaskId) syncTaskIntoProject(savedTask);
+      if (!parentTaskId) syncTaskIntoProject(savedTask);
       toast.success(t("common:modals.createTask.successCreated"));
 
       if (createMore) {

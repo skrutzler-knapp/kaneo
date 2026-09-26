@@ -46,8 +46,13 @@ export function ColumnDropzone({
   groupSubtasks,
   onToggleSubtasks,
 }: ColumnDropzoneProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: "column", column } });
-  useEffect(() => { onIsOverChange?.(isOver); }, [isOver, onIsOverChange]);
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+    data: { type: "column", column },
+  });
+  useEffect(() => {
+    onIsOverChange?.(isOver);
+  }, [isOver, onIsOverChange]);
   const reduceMotion = useReducedMotion();
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 };
 

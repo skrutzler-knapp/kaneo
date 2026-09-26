@@ -569,17 +569,21 @@ describe("CreateTaskModal", () => {
     );
 
     await act(async () => {
-      await uploadAsset?.(new File(["image"], "test.png", { type: "image/png" }));
+      await uploadAsset?.(
+        new File(["image"], "test.png", { type: "image/png" }),
+      );
     });
     expect(createTask).not.toHaveBeenCalled();
     enterTitle("Subtask with an image");
     submit();
-    await vi.waitFor(() => expect(createTask).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: "to-do",
-        parentTaskId: "parent-task-1",
-      }),
-    ));
+    await vi.waitFor(() =>
+      expect(createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "to-do",
+          parentTaskId: "parent-task-1",
+        }),
+      ),
+    );
   });
 
   it("hides the picker when a project is in scope from the route", () => {

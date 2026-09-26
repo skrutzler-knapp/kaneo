@@ -55,9 +55,12 @@ describe("TaskProgressBadges", () => {
     const onToggle = vi.fn();
     const onCardClick = vi.fn();
     render(
-      // biome-ignore lint/a11y/useKeyWithClickEvents: stands in for the card.
-      // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the card.
-      <div onClick={onCardClick}>
+      <div
+        role="link"
+        tabIndex={0}
+        onClick={onCardClick}
+        onKeyDown={onCardClick}
+      >
         <TaskProgressBadges
           task={{
             description: null,

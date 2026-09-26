@@ -51,7 +51,10 @@ async function importTasks(
   ];
 
   if (assigneeIds.length > 0) await assertKaneoCanChangeAssignee(projectId);
-  const memberIds = await filterAssignableUsers(assigneeIds, project.workspaceId);
+  const memberIds = await filterAssignableUsers(
+    assigneeIds,
+    project.workspaceId,
+  );
   const assignableIds = await filterUsersWithProjectAccess(
     memberIds,
     projectId,

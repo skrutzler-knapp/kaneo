@@ -198,7 +198,11 @@ const taskRelation = apiRouter<BaseVariables & { workspaceId: string }>()
   .openapi(getProjectTaskRelationsRoute, async (c) => {
     const { projectId } = c.req.valid("param");
     return c.json(
-      await getProjectTaskRelations(projectId, c.get("workspaceId"), c.get("userId")),
+      await getProjectTaskRelations(
+        projectId,
+        c.get("workspaceId"),
+        c.get("userId"),
+      ),
       200,
     );
   })

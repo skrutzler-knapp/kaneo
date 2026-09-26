@@ -14,10 +14,15 @@ type ColumnData = {
 
 export const boardCollisionDetection: CollisionDetection = (args) => {
   if (args.active.data?.current?.type === "subtask") {
-    return closestCorners({ ...args, droppableContainers: args.droppableContainers.filter((container) =>
-      container.id !== args.active.id &&
-      container.data.current?.parentTaskId === args.active.data.current?.parentTaskId,
-    ) });
+    return closestCorners({
+      ...args,
+      droppableContainers: args.droppableContainers.filter(
+        (container) =>
+          container.id !== args.active.id &&
+          container.data.current?.parentTaskId ===
+            args.active.data.current?.parentTaskId,
+      ),
+    });
   }
   const {
     pointerCoordinates: pointer,

@@ -8,6 +8,7 @@ import { handleTaskRelationCreated } from "./events/task-relation-created";
 import { handleTaskRelationDeleted } from "./events/task-relation-deleted";
 import { handleTaskStatusChanged } from "./events/task-status-changed";
 import { handleTaskTitleChanged } from "./events/task-title-changed";
+import { handleTaskViewed } from "./events/task-viewed";
 
 export const gitlabPlugin: IntegrationPlugin = {
   type: "gitlab",
@@ -17,6 +18,7 @@ export const gitlabPlugin: IntegrationPlugin = {
   onTaskPriorityChanged: handleTaskPriorityChanged,
   onTaskRelationCreated: handleTaskRelationCreated,
   onTaskRelationDeleted: handleTaskRelationDeleted,
+  onTaskViewed: handleTaskViewed,
   onTaskTitleChanged: handleTaskTitleChanged,
   onTaskDescriptionChanged: handleTaskDescriptionChanged,
   onTaskCommentCreated: handleTaskCommentCreated,

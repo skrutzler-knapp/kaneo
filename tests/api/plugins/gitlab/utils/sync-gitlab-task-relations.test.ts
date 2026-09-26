@@ -1,4 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vite-plus/test";
 
 const mocks = vi.hoisted(() => {
   const links = [
@@ -135,9 +142,8 @@ vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api", () => ({
   createGitlabClient: (...args: unknown[]) => mocks.createGitlabClient(...args),
 }));
 
-const { syncGitlabRelationsForIssues } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-task-relations"
-);
+const { syncGitlabRelationsForIssues } =
+  await import("../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-task-relations");
 
 afterEach(() => {
   vi.clearAllMocks();

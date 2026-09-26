@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { getCustomTaskLabelNames } from "../../../apps/api/src/plugins/task-labels";
 
 const labelFindMany = vi.hoisted(() => vi.fn());

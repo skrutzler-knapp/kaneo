@@ -324,7 +324,14 @@ function TaskCardContent({
                 </HoverCard>
               )}
 
-              <TaskProgressBadges task={task} subtaskToggle={groupSubtasks && subtaskCount > 0 && onToggleSubtasks ? { expanded: subtasksExpanded, onToggle: onToggleSubtasks } : undefined} />
+              <TaskProgressBadges
+                task={task}
+                subtaskToggle={
+                  groupSubtasks && subtaskCount > 0 && onToggleSubtasks
+                    ? { expanded: subtasksExpanded, onToggle: onToggleSubtasks }
+                    : undefined
+                }
+              />
 
               {showDueDates && task.dueDate && (
                 <div

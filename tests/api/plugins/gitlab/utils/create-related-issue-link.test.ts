@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 
@@ -14,9 +14,8 @@ vi.mock(
 
 vi.stubGlobal("fetch", mockFetch);
 
-const { createRelatedIssueLink, deleteRelatedIssueLink } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/utils/create-related-issue-link"
-);
+const { createRelatedIssueLink, deleteRelatedIssueLink } =
+  await import("../../../../../apps/api/src/plugins/gitlab/utils/create-related-issue-link");
 
 const config = {
   baseUrl: "https://gitlab.example.com",

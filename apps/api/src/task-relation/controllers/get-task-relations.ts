@@ -24,7 +24,11 @@ async function getTaskRelations(
   return getRelationsForTaskIds([taskId], workspaceId, userId);
 }
 
-async function getProjectTaskRelations(projectId: string, workspaceId: string, userId: string) {
+async function getProjectTaskRelations(
+  projectId: string,
+  workspaceId: string,
+  userId: string,
+) {
   const projectTaskIds = () =>
     db
       .select({ id: taskTable.id })

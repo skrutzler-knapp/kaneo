@@ -95,7 +95,9 @@ export function useProjectWebSocket(projectId: string) {
       }
 
       if (message.type === "TASK_RELATION_UPDATED") {
-        queryClient.invalidateQueries({ queryKey: ["task-relations", "project", projectId] });
+        queryClient.invalidateQueries({
+          queryKey: ["task-relations", "project", projectId],
+        });
         if (message.sourceTaskId) {
           queryClient.invalidateQueries({
             queryKey: ["task", message.sourceTaskId],
@@ -514,7 +516,7 @@ export function useProjectWebSocket(projectId: string) {
                       });
                   })
                   .finally(() => refreshingTasks.delete(taskId));
-                  }
+              }
             }
 
             invalidateDetails(message);

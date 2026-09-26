@@ -104,10 +104,16 @@ export async function handleGitlabIssueOpened(
 
     const projectId = integration.projectId;
     const closed = issue.state === "closed";
-    const kaneoProject = await db.query.projectTable.findFirst({ where: eq(projectTable.id, projectId) });
+    const kaneoProject = await db.query.projectTable.findFirst({
+      where: eq(projectTable.id, projectId),
+    });
     if (!kaneoProject) continue;
     try {
-      await ensureGitlabWorkspaceLabels(projectId, kaneoProject.workspaceId, payload.labels);
+      await ensureGitlabWorkspaceLabels(
+        projectId,
+        kaneoProject.workspaceId,
+        payload.labels,
+      );
     } catch (error) {
       console.error("Failed to sync GitLab workspace labels:", error);
     }
@@ -120,7 +126,12 @@ export async function handleGitlabIssueOpened(
 
     if (await findExternalLink(integration.id, "issue", String(issue.iid))) {
       try {
-        await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
+        await syncGitlabRelationsForIssues(
+          projectId,
+          integration.id,
+          config.projectPath,
+          [issue.iid],
+        );
       } catch (error) {
         console.error("Failed to sync GitLab task relations:", error);
       }

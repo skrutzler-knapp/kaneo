@@ -137,12 +137,15 @@ function KanbanBoard({
   const { setBackground } = useBackgroundStore();
   const navigate = useNavigate();
   const groupSubtasks = useUserPreferencesStore((state) => state.groupSubtasks);
-  const { data: relations = [] } =
-    useGetProjectTaskRelations(project.id, { enabled: groupSubtasks });
+  const { data: relations = [] } = useGetProjectTaskRelations(project.id, {
+    enabled: groupSubtasks,
+  });
   const visibleProject = dragPreview.preview ?? project;
 
   const boardState = useMemo(() => {
-    const allBoardTasks = visibleProject.columns.flatMap((column) => column.tasks);
+    const allBoardTasks = visibleProject.columns.flatMap(
+      (column) => column.tasks,
+    );
     const boardTaskById = new Map(allBoardTasks.map((task) => [task.id, task]));
     const taskOrderById = new Map(
       allBoardTasks.map((task, index) => [task.id, index]),
@@ -379,11 +382,17 @@ function KanbanBoard({
         return;
       }
       if (overData?.type === "subtask-lane") {
-        const destination = project.columns.find((column) => column.slug === overData.status);
-        const siblings = destination?.tasks.filter((task) =>
-          (boardState.subtasksByParentId.get(activeData.parentTaskId) ?? []).some((child) => child.id === task.id),
+        const destination = project.columns.find(
+          (column) => column.slug === overData.status,
         );
-        overId = siblings?.filter((task) => task.id !== activeId).at(-1)?.id ?? destination?.id;
+        const siblings = destination?.tasks.filter((task) =>
+          (
+            boardState.subtasksByParentId.get(activeData.parentTaskId) ?? []
+          ).some((child) => child.id === task.id),
+        );
+        overId =
+          siblings?.filter((task) => task.id !== activeId).at(-1)?.id ??
+          destination?.id;
       }
     }
     const placement = overId
@@ -513,27 +522,44 @@ function KanbanBoard({
             }
           >
             {boardState.columns.map((column, columnIndex) => (
-              <div key={column.id} className={groupSubtasks ? "contents" : cn("h-full max-w-96 min-w-80 shrink-0 flex-1", { "h-fit": !!background })}>
-              <Column
+              <div
                 key={column.id}
-                column={column}
-                layout={groupSubtasks ? "grid" : "flex"}
-                {...sharedColumnProps}
-                activeTaskId={activeId?.toString() ?? null}
-                sortHint={column.id === sortHintColumnId ? t("tasks:kanban.automaticallySortedHint", {
-                  sort: t(sortedByNumber ? "tasks:sort.fields.number" : "tasks:sort.fields.priority"),
-                }) : undefined}
-                disableSorting={isAutomaticallySorted}
-                disableCollectionActions={disableCollectionActions}
-                columnIndex={columnIndex}
-                boardRowCount={boardState.boardRowCount}
-                rowByTaskId={boardState.rowByTaskId}
-                subtasksByParentId={boardState.subtasksByParentId}
-                expandedParentIds={expandedSubtaskIds}
-                groupSubtasks={groupSubtasks}
-                onToggleSubtasks={toggleSubtasks}
-                disableDragDrop={disableDragDrop}
-              />
+                className={
+                  groupSubtasks
+                    ? "contents"
+                    : cn("h-full max-w-96 min-w-80 shrink-0 flex-1", {
+                        "h-fit": !!background,
+                      })
+                }
+              >
+                <Column
+                  key={column.id}
+                  column={column}
+                  layout={groupSubtasks ? "grid" : "flex"}
+                  {...sharedColumnProps}
+                  activeTaskId={activeId?.toString() ?? null}
+                  sortHint={
+                    column.id === sortHintColumnId
+                      ? t("tasks:kanban.automaticallySortedHint", {
+                          sort: t(
+                            sortedByNumber
+                              ? "tasks:sort.fields.number"
+                              : "tasks:sort.fields.priority",
+                          ),
+                        })
+                      : undefined
+                  }
+                  disableSorting={isAutomaticallySorted}
+                  disableCollectionActions={disableCollectionActions}
+                  columnIndex={columnIndex}
+                  boardRowCount={boardState.boardRowCount}
+                  rowByTaskId={boardState.rowByTaskId}
+                  subtasksByParentId={boardState.subtasksByParentId}
+                  expandedParentIds={expandedSubtaskIds}
+                  groupSubtasks={groupSubtasks}
+                  onToggleSubtasks={toggleSubtasks}
+                  disableDragDrop={disableDragDrop}
+                />
               </div>
             ))}
             {boardState.expansionRows.map((expansion) => (
@@ -551,7 +577,11 @@ function KanbanBoard({
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} isFinalColumn={activeIsFinal} disableDragDrop />
+              <TaskCard
+                task={activeTask}
+                isFinalColumn={activeIsFinal}
+                disableDragDrop
+              />
             </div>
           </div>
         ) : null}

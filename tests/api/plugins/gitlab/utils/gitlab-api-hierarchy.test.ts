@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 
@@ -14,9 +14,8 @@ vi.mock(
 
 vi.stubGlobal("fetch", mockFetch);
 
-const { createGitlabClient } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api"
-);
+const { createGitlabClient } =
+  await import("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api");
 
 const client = () =>
   createGitlabClient({

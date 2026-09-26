@@ -78,7 +78,11 @@ async function createTaskIssue(
   );
 
   if (existingLink && !isIssueInitializationPending(existingLink)) {
-    await syncTaskLabelsToGitlab(config, event.taskId, Number(existingLink.externalId));
+    await syncTaskLabelsToGitlab(
+      config,
+      event.taskId,
+      Number(existingLink.externalId),
+    );
     await syncSubtaskRelations(event.taskId, context);
     return;
   }

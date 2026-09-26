@@ -93,7 +93,10 @@ function Column({
     return (
       <div className={columnClassName}>
         <div className="shrink-0 border-b border-border/60 px-3 py-2">
-          <ColumnHeader column={column} disableCollectionActions={disableCollectionActions} />
+          <ColumnHeader
+            column={column}
+            disableCollectionActions={disableCollectionActions}
+          />
           {sortHint && <ColumnSortHint label={sortHint} />}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pt-1 pb-2 [-webkit-overflow-scrolling:touch]">
@@ -124,7 +127,10 @@ function Column({
         }`}
         style={{ gridColumn: (columnIndex ?? 0) + 1, gridRow: 1 }}
       >
-        <ColumnHeader column={column} disableCollectionActions={disableCollectionActions} />
+        <ColumnHeader
+          column={column}
+          disableCollectionActions={disableCollectionActions}
+        />
         {sortHint && <ColumnSortHint label={sortHint} />}
       </div>
       <ColumnDropzone

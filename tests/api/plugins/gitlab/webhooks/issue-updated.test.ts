@@ -17,10 +17,12 @@ const mocks = vi.hoisted(() => {
     syncGitlabRelationsForIssues: vi.fn(),
     taskFindFirst: vi.fn(),
     db: {
-      insert: () => ({ values: (values: unknown) => {
-        mocks.labelInsert(values);
-        return { onConflictDoNothing: async () => undefined };
-      } }),
+      insert: () => ({
+        values: (values: unknown) => {
+          mocks.labelInsert(values);
+          return { onConflictDoNothing: async () => undefined };
+        },
+      }),
       update: () => ({
         set: (values: Record<string, unknown>) => {
           taskUpdates.push(values);
@@ -410,9 +412,14 @@ describe("handleGitlabIssueUpdated", () => {
       },
     });
 
-    expect(mocks.labelInsert).toHaveBeenCalledWith(fullLabels.map((label) => ({
-      name: label.title, color: label.color, taskId: "task-1", workspaceId: "workspace-1",
-    })));
+    expect(mocks.labelInsert).toHaveBeenCalledWith(
+      fullLabels.map((label) => ({
+        name: label.title,
+        color: label.color,
+        taskId: "task-1",
+        workspaceId: "workspace-1",
+      })),
+    );
     expect(mocks.ensureGitlabWorkspaceLabels).toHaveBeenCalledWith(
       "project-1",
       "workspace-1",

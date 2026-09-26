@@ -138,7 +138,13 @@ async function createTaskIssue(
           })
         )?.data?.updated_at,
       labels: async () => {
-        await addLabelsToIssue(octokit, repositoryOwner, repositoryName, issueNumber, await getCustomTaskLabelNames(event.taskId));
+        await addLabelsToIssue(
+          octokit,
+          repositoryOwner,
+          repositoryName,
+          issueNumber,
+          await getCustomTaskLabelNames(event.taskId),
+        );
         return syncTaskFieldLabels(
           event.taskId,
           context,
