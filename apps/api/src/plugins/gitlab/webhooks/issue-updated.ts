@@ -35,6 +35,7 @@ import type {
 import { labelColor, labelTitles } from "../utils/payload";
 import { isSystemLabelName } from "../utils/system-labels";
 import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import { syncGitlabRelationsForIssues } from "../utils/sync-gitlab-task-relations";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
 type IssueUpdatedPayload = {
@@ -158,8 +159,6 @@ export async function handleGitlabIssueUpdated(
   const touchedLabels = Boolean(changes?.labels || payload.labels);
   const touchedAssignees = Boolean(changes?.assignees || payload.assignees);
 
-  if (!touchedText && !touchedLabels && !touchedAssignees) return;
-
   const baseUrl = baseUrlFromProjectWebUrl(
     project.web_url,
     project.path_with_namespace,
@@ -213,6 +212,7 @@ export async function handleGitlabIssueUpdated(
             { externalLinkId: externalLink.id, field: "issue" },
           );
           const config = JSON.parse(integration.config) as GitlabConfig;
+          afterCommit(async () => { await syncGitlabRelationsForIssues(task.projectId, integration.id, config.projectPath, [issue.iid]); });
           if (touchedAssignees && config.gitlabOwnsAssignees) {
             const gitlabAssignees = snapshotGitlabAssignees(payload.assignees ?? changes?.assignees?.current);
             metadata = { ...metadata, gitlabAssignees };

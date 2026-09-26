@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   createRelatedIssueLink: vi.fn(),
   isUnsupportedGitlabHierarchyParent: vi.fn(),
   setSubtaskParent: vi.fn(),
+  recordGitlabTaskRelation: vi.fn(),
 }));
 
 vi.mock("../../../../../apps/api/src/plugins/github/services/link-manager", () => ({
@@ -67,6 +68,14 @@ vi.mock(
       mocks.createRelatedIssueLink(...args),
     isUnsupportedGitlabHierarchyParent: (...args: unknown[]) =>
       mocks.isUnsupportedGitlabHierarchyParent(...args),
+  }),
+);
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-task-relations",
+  () => ({
+    recordGitlabTaskRelation: (...args: unknown[]) =>
+      mocks.recordGitlabTaskRelation(...args),
   }),
 );
 
@@ -133,6 +142,11 @@ describe("handleTaskCreated", () => {
     );
     expect(mocks.findSubtaskRelationsByTask).toHaveBeenCalledWith("child-task");
     expect(mocks.setSubtaskParent).toHaveBeenCalledWith(context.config, 1, 4);
+    expect(mocks.recordGitlabTaskRelation).toHaveBeenCalledWith(
+      "integration-1",
+      { sourceIid: 1, targetIid: 4, relationType: "subtask" },
+      true,
+    );
   });
 
   it("reconciles saved subtasks when the GitLab issue link already exists", async () => {

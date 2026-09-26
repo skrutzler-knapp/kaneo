@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
     labelInsert: vi.fn(),
     syncGitlabLabelsToTask: vi.fn(),
     syncGitlabLabelCatalog: vi.fn(),
+    syncGitlabRelationsForIssues: vi.fn(),
     taskFindFirst: vi.fn(),
     db: {
       insert: () => ({ values: (values: unknown) => {
@@ -82,6 +83,14 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-task-relations",
+  () => ({
+    syncGitlabRelationsForIssues: (...args: unknown[]) =>
+      mocks.syncGitlabRelationsForIssues(...args),
+  }),
+);
+
 const integration = {
   id: "integration-1",
   projectId: "project-1",
@@ -143,6 +152,7 @@ beforeEach(() => {
     userId: null,
   });
   mocks.updateExternalLink.mockResolvedValue(undefined);
+  mocks.syncGitlabRelationsForIssues.mockResolvedValue({ created: 0, deleted: 0 });
 });
 
 describe("handleGitlabIssueUpdated", () => {
@@ -179,7 +189,7 @@ describe("handleGitlabIssueUpdated", () => {
     expect(mocks.taskUpdates).toEqual([{ title: "Edited in GitLab" }]);
   });
 
-  it("does nothing when the update changed neither text nor labels", async () => {
+  it("reconciles relations when an update changes neither text nor labels", async () => {
     mocks.findExternalLink.mockResolvedValue({
       id: "link-1",
       taskId: "task-1",
@@ -191,7 +201,12 @@ describe("handleGitlabIssueUpdated", () => {
       changes: {},
     });
 
-    expect(mocks.findExternalLink).not.toHaveBeenCalled();
+    expect(mocks.syncGitlabRelationsForIssues).toHaveBeenCalledWith(
+      "project-1",
+      "integration-1",
+      "usekaneo/kaneo",
+      [42],
+    );
     expect(mocks.taskUpdates).toHaveLength(0);
   });
 

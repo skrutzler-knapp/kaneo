@@ -74,4 +74,80 @@ describe("GitLab work item hierarchy", () => {
     });
   });
 
+  it("lists related issue links and deletes them with their link type", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              issue_link_id: 19,
+              iid: 3,
+              project_id: 42,
+              link_type: "relates_to",
+            },
+          ]),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const gitlab = client();
+    await expect(gitlab.listIssueLinks("acme/web", 5)).resolves.toEqual([
+      {
+        issue_link_id: 19,
+        iid: 3,
+        project_id: 42,
+        link_type: "relates_to",
+      },
+    ]);
+    await gitlab.deleteIssueLink("acme/web", 5, 19, "relates_to");
+
+    expect(mockFetch.mock.calls[0][0]).toContain(
+      "/api/v4/projects/acme%2Fweb/issues/5/links",
+    );
+    expect(mockFetch.mock.calls[1][0]).toContain(
+      "/api/v4/projects/acme%2Fweb/issues/5/links/19?link_type=relates_to",
+    );
+    expect(mockFetch.mock.calls[1][1].method).toBe("DELETE");
+  });
+
+  it("removes a child work item's parent with a null parent ID", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: {
+              project: {
+                workItems: {
+                  nodes: [{ id: "child-global-id", iid: "4" }],
+                },
+              },
+            },
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: {
+              workItemsHierarchyReorder: {
+                errors: [],
+                workItem: { iid: "4" },
+                parentWorkItem: null,
+              },
+            },
+          }),
+          { status: 200 },
+        ),
+      );
+
+    await client().removeSubtaskParent("acme/web", 4);
+
+    const mutationRequest = JSON.parse(mockFetch.mock.calls[1][1].body as string);
+    expect(mutationRequest.variables).toEqual({
+      parentId: null,
+      childId: "child-global-id",
+    });
+  });
 });

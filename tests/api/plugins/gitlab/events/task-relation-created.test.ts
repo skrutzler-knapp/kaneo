@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   findExternalLinkByTaskAndType: vi.fn(),
   setSubtaskParent: vi.fn(),
+  createRelatedIssueLink: vi.fn(),
+  recordGitlabTaskRelation: vi.fn(),
 }));
 
 vi.mock(
@@ -20,8 +22,17 @@ vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent", (
 vi.mock(
   "../../../../../apps/api/src/plugins/gitlab/utils/create-related-issue-link",
   () => ({
-    createRelatedIssueLink: vi.fn(),
+    createRelatedIssueLink: (...args: unknown[]) =>
+      mocks.createRelatedIssueLink(...args),
     isUnsupportedGitlabHierarchyParent: () => false,
+  }),
+);
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-task-relations",
+  () => ({
+    recordGitlabTaskRelation: (...args: unknown[]) =>
+      mocks.recordGitlabTaskRelation(...args),
   }),
 );
 
@@ -63,6 +74,36 @@ describe("handleTaskRelationCreated", () => {
     );
 
     expect(mocks.setSubtaskParent).toHaveBeenCalledWith(context.config, 1, 4);
+    expect(mocks.recordGitlabTaskRelation).toHaveBeenCalledWith(
+      "integration-1",
+      { sourceIid: 1, targetIid: 4, relationType: "subtask" },
+      true,
+    );
+  });
+
+  it("creates a related issue link when Kaneo adds a related relation", async () => {
+    await handleTaskRelationCreated(
+      {
+        sourceTaskId: "parent-task",
+        targetTaskId: "child-task",
+        relationType: "related",
+        projectId: "project-1",
+        source: "kaneo",
+      },
+      context,
+    );
+
+    expect(mocks.createRelatedIssueLink).toHaveBeenCalledWith(
+      context.config,
+      1,
+      4,
+      "relates_to",
+    );
+    expect(mocks.recordGitlabTaskRelation).toHaveBeenCalledWith(
+      "integration-1",
+      { sourceIid: 1, targetIid: 4, relationType: "related" },
+      true,
+    );
   });
 
   it("does not echo relations imported from GitLab back to GitLab", async () => {

@@ -6,12 +6,16 @@ import {
   isUnsupportedGitlabHierarchyParent,
 } from "../utils/create-related-issue-link";
 import { setGitlabSubtaskParent } from "../utils/set-subtask-parent";
+import { recordGitlabTaskRelation } from "../utils/sync-gitlab-task-relations";
 
 export async function handleTaskRelationCreated(
   event: TaskRelationCreatedEvent,
   context: PluginContext,
 ): Promise<void> {
-  if (event.source === "gitlab" || event.relationType !== "subtask") return;
+  if (event.source === "gitlab") return;
+  if (!(["subtask", "related", "blocks"] as string[]).includes(event.relationType)) {
+    return;
+  }
 
   const config = context.config as GitlabConfig;
   if (!config.baseUrl || !config.accessToken) return;
@@ -36,10 +40,28 @@ export async function handleTaskRelationCreated(
     return;
   }
 
-  try {
-    await setGitlabSubtaskParent(config, parentIid, childIid);
-  } catch (error) {
-    if (!isUnsupportedGitlabHierarchyParent(error)) throw error;
-    await createRelatedIssueLink(config, parentIid, childIid);
+  if (event.relationType === "subtask") {
+    try {
+      await setGitlabSubtaskParent(config, parentIid, childIid);
+    } catch (error) {
+      if (!isUnsupportedGitlabHierarchyParent(error)) throw error;
+      await createRelatedIssueLink(config, parentIid, childIid);
+    }
   }
+
+  if (event.relationType === "related") {
+    await createRelatedIssueLink(config, parentIid, childIid, "relates_to");
+  } else if (event.relationType === "blocks") {
+    await createRelatedIssueLink(config, parentIid, childIid, "blocks");
+  }
+
+  await recordGitlabTaskRelation(
+    context.integrationId,
+    {
+      sourceIid: parentIid,
+      targetIid: childIid,
+      relationType: event.relationType as "subtask" | "related" | "blocks",
+    },
+    true,
+  );
 }

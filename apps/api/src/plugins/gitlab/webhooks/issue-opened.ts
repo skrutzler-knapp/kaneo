@@ -36,6 +36,7 @@ import { labelTitles } from "../utils/payload";
 import { resolveTargetStatus } from "../utils/resolve-column";
 import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
 import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
+import { syncGitlabRelationsForIssues } from "../utils/sync-gitlab-task-relations";
 import { withSyncedNoteId } from "../utils/synced-notes";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
@@ -104,6 +105,10 @@ export async function handleGitlabIssueOpened(
       ? snapshotGitlabAssignees(payload.assignees)
       : undefined;
 
+    if (await findExternalLink(integration.id, "issue", String(issue.iid))) {
+      await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
+      continue;
+    }
     const result = await db.transaction(async (tx) => {
       const [current] = await tx
         .select()
@@ -194,6 +199,8 @@ export async function handleGitlabIssueOpened(
       linkMetadata,
       eligible,
     } = result;
+
+    await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
 
     await publishEvent("task.created", {
       ...createdTask,

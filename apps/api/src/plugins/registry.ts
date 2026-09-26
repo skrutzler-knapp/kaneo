@@ -15,6 +15,7 @@ import type {
   TaskMovedEvent,
   TaskPriorityChangedEvent,
   TaskRelationCreatedEvent,
+  TaskRelationDeletedEvent,
   TaskStatusChangedEvent,
   TaskTitleChangedEvent,
   TaskUnassignedEvent,
@@ -62,6 +63,13 @@ export function initializeEventSubscriptions(): void {
     "task-relation.created",
     async (data) => {
       await broadcastTaskRelationCreated(data);
+    },
+  );
+
+  subscribeToEvent<TaskRelationDeletedEvent>(
+    "task-relation.deleted",
+    async (data) => {
+      await broadcastTaskRelationDeleted(data);
     },
   );
 
@@ -307,6 +315,27 @@ export async function broadcastTaskRelationCreated(
     } catch (error) {
       console.error(
         `Plugin ${plugin.type} error on task-relation.created:`,
+        error,
+      );
+    }
+  }
+}
+
+export async function broadcastTaskRelationDeleted(
+  event: TaskRelationDeletedEvent,
+): Promise<void> {
+  if (event.source === "gitlab") return;
+
+  const integrations = await getActiveIntegrations(event.projectId);
+  for (const integration of integrations) {
+    const plugin = getPlugin(integration.type);
+    if (!plugin?.onTaskRelationDeleted) continue;
+
+    try {
+      await plugin.onTaskRelationDeleted(event, createContext(integration));
+    } catch (error) {
+      console.error(
+        `Plugin ${plugin.type} error on task-relation.deleted:`,
         error,
       );
     }
