@@ -88,7 +88,7 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       viewMode: "board",
       setViewMode: (mode) => set({ viewMode: mode }),
-      groupSubtasks: true,
+      groupSubtasks: false,
       setGroupSubtasks: (group) => set({ groupSubtasks: group }),
 
       compactMode: false,

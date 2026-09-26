@@ -137,8 +137,8 @@ function KanbanBoard({
   const { setBackground } = useBackgroundStore();
   const navigate = useNavigate();
   const groupSubtasks = useUserPreferencesStore((state) => state.groupSubtasks);
-  const { data: relations = [], isLoading: isLoadingRelations } =
-    useGetProjectTaskRelations(project.id);
+  const { data: relations = [] } =
+    useGetProjectTaskRelations(project.id, { enabled: groupSubtasks });
   const visibleProject = dragPreview.preview ?? project;
 
   const boardState = useMemo(() => {
@@ -423,7 +423,7 @@ function KanbanBoard({
     });
   };
 
-  if (!project?.columns || isLoadingRelations) {
+  if (!project?.columns) {
     return (
       <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/25 to-background">
         <header className="mb-6 mt-6 space-y-6 shrink-0 px-6">
@@ -470,6 +470,13 @@ function KanbanBoard({
         .flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
+  const sharedColumnProps = {
+    disableDragDrop,
+    subtasksByParentId: boardState.subtasksByParentId,
+    expandedParentIds: expandedSubtaskIds,
+    groupSubtasks,
+    onToggleSubtasks: toggleSubtasks,
+  };
 
   return (
     <DndContext
@@ -485,18 +492,34 @@ function KanbanBoard({
           "bg-linear-to-b from-muted/20 to-background": !background,
         })}
       >
-        <div className="min-h-0 flex-1 overflow-auto [-webkit-overflow-scrolling:touch]">
+        <div
+          className={cn(
+            "min-h-0 flex-1 [-webkit-overflow-scrolling:touch]",
+            groupSubtasks ? "overflow-auto" : "overflow-x-auto",
+          )}
+        >
           <div
-            className="grid min-w-max items-start gap-x-4 gap-y-2 px-4 py-4 md:px-5"
-            style={{
-              gridTemplateColumns: `repeat(${boardState.columns.length}, minmax(20rem, 24rem))`,
-              gridTemplateRows: `auto repeat(${boardState.boardRowCount}, minmax(0, max-content))`,
-            }}
+            className={
+              groupSubtasks
+                ? "grid min-w-max items-start gap-x-4 gap-y-2 px-4 py-4 md:px-5"
+                : "flex h-full min-w-max gap-4 px-4 py-4 md:px-5"
+            }
+            style={
+              groupSubtasks
+                ? {
+                    gridTemplateColumns: `repeat(${boardState.columns.length}, minmax(20rem, 24rem))`,
+                    gridTemplateRows: `auto repeat(${boardState.boardRowCount}, minmax(0, max-content))`,
+                  }
+                : undefined
+            }
           >
             {boardState.columns.map((column, columnIndex) => (
+              <div key={column.id} className={groupSubtasks ? "contents" : cn("h-full max-w-96 min-w-80 shrink-0 flex-1", { "h-fit": !!background })}>
               <Column
                 key={column.id}
                 column={column}
+                layout={groupSubtasks ? "grid" : "flex"}
+                {...sharedColumnProps}
                 activeTaskId={activeId?.toString() ?? null}
                 sortHint={column.id === sortHintColumnId ? t("tasks:kanban.automaticallySortedHint", {
                   sort: t(sortedByNumber ? "tasks:sort.fields.number" : "tasks:sort.fields.priority"),
@@ -512,6 +535,7 @@ function KanbanBoard({
                 onToggleSubtasks={toggleSubtasks}
                 disableDragDrop={disableDragDrop}
               />
+              </div>
             ))}
             {boardState.expansionRows.map((expansion) => (
               <SubtaskExpansionPanel

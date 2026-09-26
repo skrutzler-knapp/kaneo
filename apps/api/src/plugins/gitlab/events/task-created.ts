@@ -20,7 +20,6 @@ import {
   createRelatedIssueLink,
   isUnsupportedGitlabHierarchyParent,
 } from "../utils/create-related-issue-link";
-import { addLabelsToIssueGitlab } from "../utils/labels";
 import { setGitlabSubtaskParent } from "../utils/set-subtask-parent";
 import { recordGitlabTaskRelation } from "../utils/sync-gitlab-task-relations";
 import { syncTaskLabelsToGitlab } from "../utils/sync-task-labels-to-gitlab";
