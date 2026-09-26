@@ -1343,7 +1343,7 @@
 			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
 			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo.",
 			"webhookTitle": "Webhook",
-			"webhookHint": "In your GitLab project, add a webhook with this URL and secret token. Enable push, issues, comments, and merge request events.",
+			"webhookHint": "In your GitLab project, add a webhook with this URL and secret token. Enable push, issue, work item, comment, and merge request events.",
 			"webhookSecretLabel": "Secret token (must match the one set on the webhook in GitLab)",
 			"baseUrlLabel": "GitLab URL",
 			"baseUrlHint": "https://gitlab.com, or the root URL of your instance",

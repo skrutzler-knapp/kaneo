@@ -39,6 +39,13 @@ export type GitlabSubtaskRelation = {
   childIid: number;
 };
 
+export type GitlabIssueLink = {
+  issue_link_id: number;
+  iid: number;
+  project_id: number;
+  link_type: "relates_to" | "blocks" | "is_blocked_by";
+};
+
 export type GitlabNote = {
   id: number;
   body: string;
@@ -142,7 +149,7 @@ const WORK_ITEM_IDS_QUERY = `
   }
 `;
 const SET_WORK_ITEM_PARENT_MUTATION = `
-  mutation SetGitLabWorkItemParent($childId: WorkItemID!, $parentId: WorkItemID!) {
+  mutation SetGitLabWorkItemParent($childId: WorkItemID!, $parentId: WorkItemID) {
     workItemsHierarchyReorder(input: { id: $childId, parentId: $parentId }) {
       errors
       workItem { iid }
@@ -395,6 +402,30 @@ export function createGitlabClient(
       );
     },
 
+    async listIssueLinks(
+      projectPath: string,
+      iid: number,
+    ): Promise<GitlabIssueLink[]> {
+      return required(
+        await call<GitlabIssueLink[]>(
+          `${project(projectPath)}/issues/${iid}/links`,
+        ),
+        "issue links",
+      );
+    },
+
+    async deleteIssueLink(
+      projectPath: string,
+      iid: number,
+      issueLinkId: number,
+      linkType: GitlabIssueLink["link_type"],
+    ): Promise<void> {
+      await call<void>(
+        `${project(projectPath)}/issues/${iid}/links/${issueLinkId}?link_type=${linkType}`,
+        { method: "DELETE" },
+      );
+    },
+
     async listIssues(
       projectPath: string,
       page: number,
@@ -522,6 +553,49 @@ export function createGitlabClient(
       if (mutation.errors.length > 0 || !mutation.workItem) {
         throw new GitlabApiError(
           mutation.errors.join("; ") || "GitLab did not update the hierarchy",
+          400,
+          "HTTP_ERROR",
+        );
+      }
+    },
+
+    async removeSubtaskParent(
+      projectPath: string,
+      childIid: number,
+    ): Promise<void> {
+      const projectPathValue = normalizeProjectPath(projectPath);
+      const result = await graphql<{
+        project: {
+          workItems: { nodes: Array<{ id: string; iid: string }> };
+        } | null;
+      }>(WORK_ITEM_IDS_QUERY, {
+        fullPath: projectPathValue,
+        iids: [String(childIid)],
+      });
+      const child = result.project?.workItems.nodes.find(
+        (item) => Number(item.iid) === childIid,
+      );
+      if (!child) {
+        throw new GitlabApiError(
+          "GitLab child work item could not be found",
+          404,
+          "HTTP_ERROR",
+        );
+      }
+
+      const mutationResult = await graphql<{
+        workItemsHierarchyReorder: {
+          errors: string[];
+          workItem: { iid: string } | null;
+        };
+      }>(SET_WORK_ITEM_PARENT_MUTATION, {
+        parentId: null,
+        childId: child.id,
+      });
+      const mutation = mutationResult.workItemsHierarchyReorder;
+      if (mutation.errors.length > 0 || !mutation.workItem) {
+        throw new GitlabApiError(
+          mutation.errors.join("; ") || "GitLab did not remove the hierarchy",
           400,
           "HTTP_ERROR",
         );

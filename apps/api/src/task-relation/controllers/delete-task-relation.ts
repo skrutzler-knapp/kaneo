@@ -56,6 +56,7 @@ async function deleteTaskRelation(
       taskId: relation.sourceTaskId,
       projectId: task.projectId,
       userId,
+      source: "kaneo",
     });
   }
 

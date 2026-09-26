@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => {
     addLabelsToIssueGitlab: vi.fn(),
     syncGitlabLabelsToTask: vi.fn(),
     syncGitlabLabelCatalog: vi.fn(),
+    syncGitlabRelationsForIssues: vi.fn(),
     db: {
       insert: () => ({
         values: (values: Record<string, unknown>) => {
@@ -100,6 +101,14 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-task-relations",
+  () => ({
+    syncGitlabRelationsForIssues: (...args: unknown[]) =>
+      mocks.syncGitlabRelationsForIssues(...args),
+  }),
+);
+
 const integration = {
   id: "integration-1",
   projectId: "project-1",
@@ -147,6 +156,7 @@ beforeEach(() => {
   });
   mocks.createExternalLink.mockResolvedValue({ id: "link-1" });
   mocks.publishEvent.mockResolvedValue(undefined);
+  mocks.syncGitlabRelationsForIssues.mockResolvedValue({ created: 0, deleted: 0 });
 });
 
 describe("handleGitlabIssueOpened", () => {

@@ -3,11 +3,9 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   activityTable,
-  externalLinkTable,
   integrationTable,
   labelTable,
   projectTable,
-  taskRelationTable,
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
@@ -29,6 +27,7 @@ import {
 } from "../../plugins/gitlab/utils/gitlab-api";
 import { taskDescriptionFromIssue } from "../../plugins/gitlab/utils/issue-description";
 import { isSystemLabelName } from "../../plugins/gitlab/utils/system-labels";
+import { syncGitlabRelationsForIssues } from "../../plugins/gitlab/utils/sync-gitlab-task-relations";
 import { claimTaskNumber } from "../../task/controllers/claim-task-numbers";
 
 type ImportResult = {
@@ -137,11 +136,10 @@ export async function importGitlabIssues(
   }
 
   try {
-    await syncGitlabSubtaskRelations(
+    await syncGitlabRelationsForIssues(
       projectId,
       integration.id,
       config.projectPath,
-      client,
       allIssues.map((issue) => issue.iid),
     );
   } catch (error) {
@@ -181,72 +179,6 @@ export async function importGitlabIssues(
     skipped,
     ...(errors.length > 0 ? { errors } : {}),
   };
-}
-
-async function syncGitlabSubtaskRelations(
-  projectId: string,
-  integrationId: string,
-  projectPath: string,
-  client: GitlabClient,
-  issueIids: number[],
-): Promise<void> {
-  if (issueIids.length === 0) return;
-
-  const relations = await client.listSubtaskRelations(projectPath, issueIids);
-  if (relations.length === 0) return;
-
-  const externalLinks = await db.query.externalLinkTable.findMany({
-    where: and(
-      eq(externalLinkTable.integrationId, integrationId),
-      eq(externalLinkTable.resourceType, "issue"),
-    ),
-  });
-  const taskIdByIid = new Map(
-    externalLinks.map((link) => [link.externalId, link.taskId]),
-  );
-  const candidates = relations.flatMap(({ parentIid, childIid }) => {
-    const sourceTaskId = taskIdByIid.get(String(parentIid));
-    const targetTaskId = taskIdByIid.get(String(childIid));
-    return sourceTaskId && targetTaskId && sourceTaskId !== targetTaskId
-      ? [{ sourceTaskId, targetTaskId }]
-      : [];
-  });
-  if (candidates.length === 0) return;
-
-  const parentTaskIds = [
-    ...new Set(candidates.map((edge) => edge.sourceTaskId)),
-  ];
-  const existingRelations = await db.query.taskRelationTable.findMany({
-    where: and(
-      eq(taskRelationTable.relationType, "subtask"),
-      inArray(taskRelationTable.sourceTaskId, parentTaskIds),
-    ),
-  });
-  const existingKeys = new Set(
-    existingRelations.map(
-      (relation) => `${relation.sourceTaskId}:${relation.targetTaskId}`,
-    ),
-  );
-
-  for (const relation of candidates) {
-    const key = `${relation.sourceTaskId}:${relation.targetTaskId}`;
-    if (existingKeys.has(key)) continue;
-
-    const [created] = await db
-      .insert(taskRelationTable)
-      .values({ ...relation, relationType: "subtask" })
-      .returning();
-    if (!created) continue;
-
-    existingKeys.add(key);
-    await publishEvent("task-relation.created", {
-      ...created,
-      projectId,
-      taskId: created.sourceTaskId,
-      userId: "",
-      source: "gitlab",
-    });
-  }
 }
 
 async function importSingleIssue(

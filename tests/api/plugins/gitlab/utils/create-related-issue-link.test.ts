@@ -11,7 +11,7 @@ vi.mock("../../../../../apps/api/src/utils/assert-public-destination", async () 
 
 vi.stubGlobal("fetch", mockFetch);
 
-const { createRelatedIssueLink } = await import(
+const { createRelatedIssueLink, deleteRelatedIssueLink } = await import(
   "../../../../../apps/api/src/plugins/gitlab/utils/create-related-issue-link"
 );
 
@@ -88,5 +88,31 @@ describe("createRelatedIssueLink", () => {
     await createRelatedIssueLink(config, 1, 8);
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("deletes a provider issue link by its relation ID", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            {
+              issue_link_id: 19,
+              iid: 8,
+              project_id: 123,
+              link_type: "relates_to",
+            },
+          ]),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await deleteRelatedIssueLink(config, 1, 8, "relates_to");
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[1][0]).toContain(
+      "/issues/1/links/19?link_type=relates_to",
+    );
+    expect(mockFetch.mock.calls[1][1].method).toBe("DELETE");
   });
 });

@@ -27,6 +27,7 @@ import { labelTitles } from "../utils/payload";
 import { resolveTargetStatus } from "../utils/resolve-column";
 import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
 import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
+import { syncGitlabRelationsForIssues } from "../utils/sync-gitlab-task-relations";
 import { withSyncedNoteId } from "../utils/synced-notes";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
@@ -99,7 +100,10 @@ export async function handleGitlabIssueOpened(
       "issue",
       issue.iid.toString(),
     );
-    if (existingLink) continue;
+    if (existingLink) {
+      await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
+      continue;
+    }
 
     const nextTaskNumber = await claimTaskNumber(projectId);
     const resolvedStatus = await resolveTargetStatus(
@@ -149,6 +153,8 @@ export async function handleGitlabIssueOpened(
       title: issue.title,
       metadata: linkMetadata,
     });
+
+    await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
 
     await publishEvent("task.created", {
       ...createdTask,

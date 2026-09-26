@@ -6,12 +6,7 @@ import {
   tokenTypeOf,
 } from "./gitlab-api";
 import { normalizeProjectPath } from "../config";
-
-type GitlabIssueLink = {
-  link_type: string;
-  iid: number;
-  project_id: number;
-};
+import type { GitlabIssueLink } from "./gitlab-api";
 
 export function isUnsupportedGitlabHierarchyParent(error: unknown): boolean {
   return (
@@ -26,6 +21,7 @@ export async function createRelatedIssueLink(
   config: GitlabConfig,
   parentIid: number,
   childIid: number,
+  linkType: GitlabIssueLink["link_type"] = "relates_to",
 ): Promise<void> {
   const project = await createGitlabClient(config).getProject(config.projectPath);
   const path = `/projects/${encodeURIComponent(normalizeProjectPath(config.projectPath))}/issues/${parentIid}/links`;
@@ -38,7 +34,7 @@ export async function createRelatedIssueLink(
     )) ?? [];
   const alreadyLinked = links.some(
     (link) =>
-      link.link_type === "relates_to" &&
+      link.link_type === linkType &&
       link.iid === childIid &&
       link.project_id === project.id,
   );
@@ -56,11 +52,32 @@ export async function createRelatedIssueLink(
         body: JSON.stringify({
           target_project_id: project.id,
           target_issue_iid: childIid,
-          link_type: "relates_to",
+          link_type: linkType,
         }),
       },
     );
   } catch (error) {
     if (!(error instanceof GitlabApiError) || error.status !== 409) throw error;
   }
+}
+
+export async function deleteRelatedIssueLink(
+  config: GitlabConfig,
+  sourceIid: number,
+  targetIid: number,
+  linkType: GitlabIssueLink["link_type"],
+): Promise<void> {
+  const client = createGitlabClient(config);
+  const links = await client.listIssueLinks(config.projectPath, sourceIid);
+  const link = links.find(
+    (candidate) =>
+      candidate.iid === targetIid && candidate.link_type === linkType,
+  );
+  if (!link) return;
+  await client.deleteIssueLink(
+    config.projectPath,
+    sourceIid,
+    link.issue_link_id,
+    linkType,
+  );
 }

@@ -48,6 +48,8 @@ async function deleteTask(taskId: string, currentUserId: string) {
       taskId: taskId,
       sourceTaskId: relation.sourceTaskId,
       targetTaskId: relation.targetTaskId,
+      relationType: relation.relationType,
+      source: "kaneo",
     });
   }
 
