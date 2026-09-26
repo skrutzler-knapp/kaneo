@@ -587,7 +587,6 @@ const finalizeTaskImageUploadRoute = createRoute({
     400: errorResponse(
       "Invalid upload, or the key does not belong to this task",
     ),
-    409: errorResponse("Task assignees are managed by GitLab"),
     403: errorResponse(
       "No workspace access, or missing task:update permission",
     ),
