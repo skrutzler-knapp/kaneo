@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import db from "../../../database";
 import { externalLinkTable } from "../../../database/schema";
+import { containsTaskFieldLabel } from "../../task-labels";
 import type { GitlabConfig } from "../config";
 import { createGitlabClient } from "./gitlab-api";
 
@@ -90,14 +91,6 @@ async function getGitlabIssueContext(taskId: string) {
     config,
     issueIid,
   };
-}
-
-function containsTaskFieldLabel(labelName: string) {
-  // GitLab interprets add_labels/remove_labels as comma-separated names.
-  return labelName.split(",").some((name) => {
-    const label = name.trim();
-    return label.startsWith("priority:") || label.startsWith("status:");
-  });
 }
 
 export async function syncLabelToGitlab(
