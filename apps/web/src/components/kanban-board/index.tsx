@@ -133,40 +133,41 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
       row: number;
       anchorColumnIndex: number;
     }> = [];
-    const maxColumnTaskCount = Math.max(
-      0,
-      ...columns.map((column) => column.tasks.length),
-    );
+    const cursors = columns.map(() => 0);
     let row = 0;
 
-    for (let taskIndex = 0; taskIndex < maxColumnTaskCount; taskIndex++) {
-      for (const column of columns) {
-        const task = column.tasks[taskIndex];
-        if (task) rowByTaskId.set(task.id, row);
+    while (
+      cursors.some((cursor, index) => cursor < columns[index].tasks.length)
+    ) {
+      let expansion: Omit<(typeof expansionRows)[number], "row"> | null = null;
+
+      for (const [columnIndex, column] of columns.entries()) {
+        const task = column.tasks[cursors[columnIndex]];
+        if (!task) continue;
+
+        const subtasks = subtasksByParentId.get(task.id) ?? [];
+        const isExpanded =
+          groupSubtasks &&
+          expandedSubtaskIds.has(task.id) &&
+          subtasks.length > 0;
+        // One expanded parent per row keeps each panel directly below its card.
+        if (isExpanded && expansion) continue;
+
+        rowByTaskId.set(task.id, row);
+        cursors[columnIndex]++;
+        if (isExpanded) {
+          expansion = {
+            parent: task,
+            subtasks,
+            taskOrderById,
+            anchorColumnIndex: columnIndex,
+          };
+        }
       }
       row++;
 
-      for (const [anchorColumnIndex, column] of columns.entries()) {
-        const parent = column.tasks[taskIndex];
-        const subtasks = parent
-          ? (subtasksByParentId.get(parent.id) ?? [])
-          : [];
-        if (
-          !groupSubtasks ||
-          !parent ||
-          !expandedSubtaskIds.has(parent.id) ||
-          subtasks.length === 0
-        ) {
-          continue;
-        }
-
-        expansionRows.push({
-          parent,
-          subtasks,
-          taskOrderById,
-          row,
-          anchorColumnIndex,
-        });
+      if (expansion) {
+        expansionRows.push({ ...expansion, row });
         row++;
       }
     }
