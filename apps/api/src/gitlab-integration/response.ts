@@ -30,7 +30,7 @@ export const gitlabIntegrationSchema = z
     }),
     gitlabOwnsAssignees: z.boolean().optional().openapi({
       description:
-        "When on, GitLab is authoritative for assignees; webhook assignees are matched to workspace members by email and Kaneo-side assignment changes are rejected.",
+        "When on, GitLab is authoritative for assignees: GitLab assignees are shown as provider identities (name, username, avatar) without linking Kaneo users, and Kaneo-side assignment changes are rejected with 409.",
     }),
     isActive: z.boolean().nullable(),
     createdAt: responseTimestamp,
