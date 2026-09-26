@@ -85,36 +85,57 @@ export function ColumnDropzone({
       >
         <div className={layout === "grid" ? "contents" : "flex flex-col gap-2"}>
           <AnimatePresence initial={false} mode="popLayout">
-            {column.tasks.map((task) => (
-              <motion.div
-                key={task.id}
-                className={layout === "grid" ? "min-w-0 self-start" : undefined}
-                style={
-                  layout === "grid"
-                    ? { gridRow: (rowByTaskId?.get(task.id) ?? 0) + 1 }
-                    : undefined
-                }
-                initial={
-                  reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
-                }
-                animate={
-                  reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }
-                }
-                exit={
-                  reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
-                }
-                transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
-              >
-                <TaskCard
-                  task={task}
-                  disableDragDrop={disableDragDrop}
-                  subtaskCount={subtasksByParentId.get(task.id)?.length ?? 0}
-                  subtasksExpanded={expandedParentIds.has(task.id)}
-                  groupSubtasks={groupSubtasks}
-                  onToggleSubtasks={() => onToggleSubtasks(task.id)}
-                />
-              </motion.div>
-            ))}
+            {column.tasks.map((task) => {
+              const subtaskCount = subtasksByParentId.get(task.id)?.length ?? 0;
+              const showsConnector =
+                layout === "grid" &&
+                groupSubtasks &&
+                subtaskCount > 0 &&
+                expandedParentIds.has(task.id);
+              return (
+                <motion.div
+                  key={task.id}
+                  className={
+                    layout !== "grid"
+                      ? undefined
+                      : showsConnector
+                        ? "flex min-w-0 flex-col self-stretch"
+                        : "min-w-0 self-start"
+                  }
+                  style={
+                    layout === "grid"
+                      ? { gridRow: (rowByTaskId?.get(task.id) ?? 0) + 1 }
+                      : undefined
+                  }
+                  initial={
+                    reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
+                  }
+                  animate={
+                    reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }
+                  }
+                  exit={
+                    reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
+                  }
+                  transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
+                >
+                  <TaskCard
+                    task={task}
+                    disableDragDrop={disableDragDrop}
+                    subtaskCount={subtaskCount}
+                    subtasksExpanded={expandedParentIds.has(task.id)}
+                    groupSubtasks={groupSubtasks}
+                    onToggleSubtasks={() => onToggleSubtasks(task.id)}
+                  />
+                  {showsConnector && (
+                    // Grows through the rest of the row and the row gap to reach the panel.
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none -mb-2 min-h-2 flex-1 self-center border-l-2 border-border"
+                    />
+                  )}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       </SortableContext>

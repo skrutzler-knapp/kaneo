@@ -18,8 +18,6 @@ type SubtaskExpansionPanelProps = {
   taskOrderById: ReadonlyMap<string, number>;
   columns: ProjectWithTasks["columns"];
   row: number;
-  anchorColumnIndex: number;
-  columnCount: number;
   disableDragDrop?: boolean;
 };
 
@@ -93,8 +91,6 @@ export default function SubtaskExpansionPanel({
   subtasks,
   columns,
   row,
-  anchorColumnIndex,
-  columnCount,
   taskOrderById,
   disableDragDrop = false,
 }: SubtaskExpansionPanelProps) {
@@ -127,11 +123,6 @@ export default function SubtaskExpansionPanel({
       className="relative z-10 min-w-0 rounded-md border border-border bg-card p-3 shadow-sm"
       style={{ gridColumn: "1 / -1", gridRow: row + 2 }}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-2 h-2 border-l-2 border-border"
-        style={{ left: `${((anchorColumnIndex + 0.5) / columnCount) * 100}%` }}
-      />
       <div className="mb-2 flex items-center gap-2 border-b border-border/70 pb-2">
         <span className="text-xs font-semibold text-muted-foreground">
           {t("tasks:subtasks.title")}
