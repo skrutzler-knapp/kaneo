@@ -10,15 +10,15 @@ import {
 } from "../../github/utils/format";
 import type { PluginContext, TaskCreatedEvent } from "../../types";
 import type { GitlabConfig } from "../config";
-import { createGitlabClient } from "../utils/gitlab-api";
-import { addLabelsToIssueGitlab } from "../utils/labels";
 import {
   createRelatedIssueLink,
   isUnsupportedGitlabHierarchyParent,
 } from "../utils/create-related-issue-link";
-import { syncTaskLabelsToGitlab } from "../utils/sync-task-labels-to-gitlab";
+import { createGitlabClient } from "../utils/gitlab-api";
+import { addLabelsToIssueGitlab } from "../utils/labels";
 import { setGitlabSubtaskParent } from "../utils/set-subtask-parent";
 import { recordGitlabTaskRelation } from "../utils/sync-gitlab-task-relations";
+import { syncTaskLabelsToGitlab } from "../utils/sync-task-labels-to-gitlab";
 
 async function syncSubtaskRelations(taskId: string, context: PluginContext) {
   const relations = await findSubtaskRelationsByTask(taskId);
@@ -74,7 +74,11 @@ export async function handleTaskCreated(
   );
 
   if (existingLink) {
-    await syncTaskLabelsToGitlab(config, event.taskId, Number(existingLink.externalId));
+    await syncTaskLabelsToGitlab(
+      config,
+      event.taskId,
+      Number(existingLink.externalId),
+    );
     await syncSubtaskRelations(event.taskId, context);
     return;
   }

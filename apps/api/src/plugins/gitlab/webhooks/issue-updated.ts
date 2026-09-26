@@ -26,11 +26,12 @@ import type {
   GitlabWebhookUser,
 } from "../utils/payload";
 import { labelTitles } from "../utils/payload";
-import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import { ensureGitlabWorkspaceLabels } from "../utils/sync-gitlab-label-catalog";
 import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
 import { syncGitlabRelationsForIssues } from "../utils/sync-gitlab-task-relations";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
 
+// Edits and label changes arrive together as one "update" action.
 type IssueUpdatedPayload = {
   object_attributes: {
     iid: number;
@@ -71,7 +72,9 @@ export async function handleGitlabIssueUpdated(
     project.web_url,
     project.path_with_namespace,
   );
-  if (!baseUrl) return;
+  if (!baseUrl) {
+    return;
+  }
 
   const integrations = await findAllIntegrationsByGitlabProject(
     baseUrl,
@@ -96,12 +99,16 @@ export async function handleGitlabIssueUpdated(
       if (!task) continue;
 
       const config = JSON.parse(integration.config) as GitlabConfig;
-      await syncGitlabRelationsForIssues(
-        task.projectId,
-        integration.id,
-        config.projectPath,
-        [issue.iid],
-      );
+      try {
+        await syncGitlabRelationsForIssues(
+          task.projectId,
+          integration.id,
+          config.projectPath,
+          [issue.iid],
+        );
+      } catch (error) {
+        console.error("Failed to sync GitLab task relations:", error);
+      }
       let metadata: LinkMetadata = parseLinkSyncMetadata(
         externalLink.metadata,
         { externalLinkId: externalLink.id, field: "issue" },
@@ -130,6 +137,13 @@ export async function handleGitlabIssueUpdated(
             .update(taskTable)
             .set({ userId: null })
             .where(eq(taskTable.id, task.id));
+          await publishEvent("task.unassigned", {
+            taskId: task.id,
+            projectId: task.projectId,
+            userId: null,
+            title: task.title,
+            type: "unassigned",
+          });
           task.userId = null;
         }
       }
@@ -153,6 +167,7 @@ export async function handleGitlabIssueUpdated(
         }
 
         if (changes?.description) {
+          // Kaneo recorded the body with its footer, so compare the raw body.
           const issueBody = issue.description ?? "";
           if (!isEchoOf(metadata.lastSync?.description, "kaneo", issueBody)) {
             const description = taskDescriptionFromIssue(issue.description);
@@ -233,13 +248,13 @@ export async function handleGitlabIssueUpdated(
 
       if (task.project?.workspaceId) {
         try {
-          await syncGitlabLabelCatalog(
-            config,
+          await ensureGitlabWorkspaceLabels(
             task.projectId,
             task.project.workspaceId,
+            currentLabels,
           );
         } catch (error) {
-          console.error("Failed to sync GitLab label catalog:", error);
+          console.error("Failed to sync GitLab workspace labels:", error);
         }
         const previousLabelNames = new Set(
           labelTitles(changes?.labels?.previous),

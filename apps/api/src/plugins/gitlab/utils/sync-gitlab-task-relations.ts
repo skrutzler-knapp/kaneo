@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 import db from "../../../database";
 import {
   externalLinkTable,
@@ -8,10 +8,7 @@ import {
 import { publishEvent } from "../../../events";
 import { getExternalLinksByIntegration } from "../../github/services/link-manager";
 import type { GitlabConfig } from "../config";
-import type {
-  GitlabIssueLink,
-  GitlabSubtaskRelation,
-} from "./gitlab-api";
+import type { GitlabIssueLink } from "./gitlab-api";
 import { createGitlabClient } from "./gitlab-api";
 
 export type GitlabTaskRelationType = "subtask" | "related" | "blocks";
@@ -46,9 +43,7 @@ function parseMetadata(raw: string | null | undefined) {
   }
 }
 
-function normalizeSnapshot(
-  value: unknown,
-): GitlabTaskRelationSnapshot | null {
+function normalizeSnapshot(value: unknown): GitlabTaskRelationSnapshot | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
   if (
@@ -70,7 +65,10 @@ function normalizeSnapshot(
 function canonicalizeRelation(
   relation: GitlabTaskRelationSnapshot,
 ): GitlabTaskRelationSnapshot {
-  if (relation.relationType === "related" && relation.sourceIid > relation.targetIid) {
+  if (
+    relation.relationType === "related" &&
+    relation.sourceIid > relation.targetIid
+  ) {
     return {
       ...relation,
       sourceIid: relation.targetIid,
@@ -185,8 +183,10 @@ async function updateSnapshots(
   });
   const relatedIids = new Set(affectedIids);
   for (const relation of desired.values()) {
-    if (affectedIids.has(relation.sourceIid)) relatedIids.add(relation.targetIid);
-    if (affectedIids.has(relation.targetIid)) relatedIids.add(relation.sourceIid);
+    if (affectedIids.has(relation.sourceIid))
+      relatedIids.add(relation.targetIid);
+    if (affectedIids.has(relation.targetIid))
+      relatedIids.add(relation.sourceIid);
   }
   for (const link of links) {
     for (const relation of snapshotFromMetadata(link.metadata)) {
@@ -252,7 +252,10 @@ async function updateSnapshots(
         await transaction
           .update(externalLinkTable)
           .set({
-            metadata: JSON.stringify({ ...metadata, gitlabTaskRelations: sorted }),
+            metadata: JSON.stringify({
+              ...metadata,
+              gitlabTaskRelations: sorted,
+            }),
           })
           .where(eq(externalLinkTable.id, link.id));
       });
@@ -300,7 +303,10 @@ export async function syncGitlabRelationsForIssues(
   });
   if (!config) return { created: 0, deleted: 0 };
   const gitlabClient = client(
-    JSON.parse(config.config) as Pick<GitlabConfig, "baseUrl" | "accessToken" | "tokenType">,
+    JSON.parse(config.config) as Pick<
+      GitlabConfig,
+      "baseUrl" | "accessToken" | "tokenType"
+    >,
   );
   const projectInfo = await gitlabClient.getProject(projectPath);
   const selectedIssueIids = [...affectedIids];
@@ -353,11 +359,14 @@ export async function syncGitlabRelationsForIssues(
     const sourceIid = issueIidByTaskId.get(relation.sourceTaskId);
     const targetIid = issueIidByTaskId.get(relation.targetTaskId);
     if (sourceIid === undefined || targetIid === undefined) continue;
-    knownSubtasks.set(`${Math.min(sourceIid, targetIid)}:${Math.max(sourceIid, targetIid)}`, {
-      sourceIid,
-      targetIid,
-      relationType: "subtask",
-    });
+    knownSubtasks.set(
+      `${Math.min(sourceIid, targetIid)}:${Math.max(sourceIid, targetIid)}`,
+      {
+        sourceIid,
+        targetIid,
+        relationType: "subtask",
+      },
+    );
   }
 
   const desiredRelations = new Map<string, GitlabTaskRelationSnapshot>();
@@ -382,7 +391,9 @@ export async function syncGitlabRelationsForIssues(
   for (const relation of desiredRelations.values()) {
     const candidate = issueLinkToTaskRelation(relation, taskIdByIid);
     if (!candidate) continue;
-    const exists = existingRelations.some((item) => matchesRelation(item, candidate));
+    const exists = existingRelations.some((item) =>
+      matchesRelation(item, candidate),
+    );
     if (exists) continue;
 
     const [inserted] = await db
@@ -405,7 +416,9 @@ export async function syncGitlabRelationsForIssues(
     if (desiredRelations.has(key)) continue;
     const candidate = issueLinkToTaskRelation(relation, taskIdByIid);
     if (!candidate) continue;
-    const existing = existingRelations.find((item) => matchesRelation(item, candidate));
+    const existing = existingRelations.find((item) =>
+      matchesRelation(item, candidate),
+    );
     if (!existing) continue;
     const [removed] = await db
       .delete(taskRelationTable)

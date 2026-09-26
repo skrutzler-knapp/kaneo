@@ -1,8 +1,8 @@
 import { findExternalLinkByTaskAndType } from "../../github/services/link-manager";
 import type { PluginContext, TaskRelationDeletedEvent } from "../../types";
 import type { GitlabConfig } from "../config";
-import { createGitlabClient } from "../utils/gitlab-api";
 import { deleteRelatedIssueLink } from "../utils/create-related-issue-link";
+import { createGitlabClient } from "../utils/gitlab-api";
 import { recordGitlabTaskRelation } from "../utils/sync-gitlab-task-relations";
 
 export async function handleTaskRelationDeleted(
@@ -10,7 +10,9 @@ export async function handleTaskRelationDeleted(
   context: PluginContext,
 ): Promise<void> {
   if (event.source === "gitlab") return;
-  if (!(["subtask", "related", "blocks"] as string[]).includes(event.relationType)) {
+  if (
+    !(["subtask", "related", "blocks"] as string[]).includes(event.relationType)
+  ) {
     return;
   }
 
@@ -50,12 +52,7 @@ export async function handleTaskRelationDeleted(
     if (isHierarchyParent) {
       await client.removeSubtaskParent(config.projectPath, targetIid);
     } else {
-      await deleteRelatedIssueLink(
-        config,
-        sourceIid,
-        targetIid,
-        "relates_to",
-      );
+      await deleteRelatedIssueLink(config, sourceIid, targetIid, "relates_to");
     }
   } else {
     await deleteRelatedIssueLink(

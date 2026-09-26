@@ -13,7 +13,9 @@ export async function handleTaskRelationCreated(
   context: PluginContext,
 ): Promise<void> {
   if (event.source === "gitlab") return;
-  if (!(["subtask", "related", "blocks"] as string[]).includes(event.relationType)) {
+  if (
+    !(["subtask", "related", "blocks"] as string[]).includes(event.relationType)
+  ) {
     return;
   }
 

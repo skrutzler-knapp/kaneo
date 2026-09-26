@@ -88,10 +88,7 @@ describe("handleTaskRelationDeleted", () => {
   it("removes an actual GitLab work-item parent edge", async () => {
     await handleTaskRelationDeleted(event("subtask"), context);
 
-    expect(mocks.removeSubtaskParent).toHaveBeenCalledWith(
-      "acme/web",
-      10,
-    );
+    expect(mocks.removeSubtaskParent).toHaveBeenCalledWith("acme/web", 10);
     expect(mocks.deleteRelatedIssueLink).not.toHaveBeenCalled();
     expect(mocks.recordGitlabTaskRelation).toHaveBeenCalledWith(
       "integration-1",

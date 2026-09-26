@@ -22,7 +22,9 @@ export async function syncGitlabLabelsToTask(
   const existingRows = await db.query.labelTable.findMany({
     where: eq(labelTable.taskId, taskId),
   });
-  const existingByName = new Map(existingRows.map((label) => [label.name, label]));
+  const existingByName = new Map(
+    existingRows.map((label) => [label.name, label]),
+  );
   const labelsToInsert = [...labelsByName]
     .filter(([name]) => !existingByName.has(name))
     .map(([name, color]) => ({ name, color, taskId, workspaceId }));
@@ -58,6 +60,7 @@ export async function syncGitlabLabelsToTask(
       .where(inArray(labelTable.id, ids));
   }
 
+  // Absence from GitLab alone does not imply removal: only delete names explicitly removed by this event.
   const removedLabelNames = new Set(removedLabels);
   const labelsToDelete = existingRows
     .filter(

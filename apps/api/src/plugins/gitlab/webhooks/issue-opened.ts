@@ -25,7 +25,7 @@ import type {
 } from "../utils/payload";
 import { labelTitles } from "../utils/payload";
 import { resolveTargetStatus } from "../utils/resolve-column";
-import { syncGitlabLabelCatalog } from "../utils/sync-gitlab-label-catalog";
+import { ensureGitlabWorkspaceLabels } from "../utils/sync-gitlab-label-catalog";
 import { syncGitlabLabelsToTask } from "../utils/sync-gitlab-labels-to-task";
 import { syncGitlabRelationsForIssues } from "../utils/sync-gitlab-task-relations";
 import { withSyncedNoteId } from "../utils/synced-notes";
@@ -53,20 +53,28 @@ export async function handleGitlabIssueOpened(
   const issue = payload.object_attributes;
   const { project } = payload;
 
-  if (issue.confidential) return;
+  // Confidential issues are visible only to project members in GitLab.
+  if (issue.confidential) {
+    return;
+  }
 
   const baseUrl = baseUrlFromProjectWebUrl(
     project.web_url,
     project.path_with_namespace,
   );
-  if (!baseUrl) return;
+  if (!baseUrl) {
+    return;
+  }
 
   const integrations = await findAllIntegrationsByGitlabProject(
     baseUrl,
     project.path_with_namespace,
     integrationId,
   );
-  if (integrations.length === 0) return;
+
+  if (integrations.length === 0) {
+    return;
+  }
 
   const existingLabels = labelTitles(payload.labels);
   const author = payload.user?.username ?? payload.user?.name;
@@ -87,7 +95,19 @@ export async function handleGitlabIssueOpened(
     const kaneoProject = await db.query.projectTable.findFirst({
       where: eq(projectTable.id, projectId),
     });
-    if (!kaneoProject) continue;
+    if (!kaneoProject) {
+      continue;
+    }
+
+    try {
+      await ensureGitlabWorkspaceLabels(
+        projectId,
+        kaneoProject.workspaceId,
+        payload.labels,
+      );
+    } catch (error) {
+      console.error("Failed to sync GitLab workspace labels:", error);
+    }
 
     const priority = extractIssuePriority(existingLabels);
     const status = extractIssueStatus(existingLabels);
@@ -100,17 +120,29 @@ export async function handleGitlabIssueOpened(
       "issue",
       issue.iid.toString(),
     );
+
     if (existingLink) {
-      await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
+      try {
+        await syncGitlabRelationsForIssues(
+          projectId,
+          integration.id,
+          config.projectPath,
+          [issue.iid],
+        );
+      } catch (error) {
+        console.error("Failed to sync GitLab task relations:", error);
+      }
       continue;
     }
 
     const nextTaskNumber = await claimTaskNumber(projectId);
+
     const resolvedStatus = await resolveTargetStatus(
       projectId,
       "issue_opened",
       status || "to-do",
     );
+
     const targetColumn = await db.query.columnTable.findFirst({
       where: and(
         eq(columnTable.projectId, projectId),
@@ -118,18 +150,20 @@ export async function handleGitlabIssueOpened(
       ),
     });
 
+    const taskValues: typeof taskTable.$inferInsert = {
+      projectId,
+      userId: null,
+      title: issue.title,
+      description: taskDescriptionFromIssue(issue.description),
+      status: resolvedStatus,
+      columnId: targetColumn?.id ?? null,
+      priority: priority ?? "low",
+      number: nextTaskNumber,
+    };
+
     const [createdTask] = await db
       .insert(taskTable)
-      .values({
-        projectId,
-        userId: null,
-        title: issue.title,
-        description: taskDescriptionFromIssue(issue.description),
-        status: resolvedStatus,
-        columnId: targetColumn?.id ?? null,
-        priority: priority ?? "low",
-        number: nextTaskNumber,
-      })
+      .values(taskValues)
       .returning();
 
     if (!createdTask) {
@@ -144,6 +178,8 @@ export async function handleGitlabIssueOpened(
       ...(gitlabAssignees ? { gitlabAssignees } : {}),
     };
 
+    // Must run before task.created: the plugin's onTaskCreated uses link
+    // existence to skip self-originated tasks, else it duplicates the issue.
     const issueLink = await createExternalLink({
       taskId: createdTask.id,
       integrationId: integration.id,
@@ -153,8 +189,6 @@ export async function handleGitlabIssueOpened(
       title: issue.title,
       metadata: linkMetadata,
     });
-
-    await syncGitlabRelationsForIssues(projectId, integration.id, config.projectPath, [issue.iid]);
 
     await publishEvent("task.created", {
       ...createdTask,
@@ -168,9 +202,14 @@ export async function handleGitlabIssueOpened(
     });
 
     try {
-      await syncGitlabLabelCatalog(config, projectId, kaneoProject.workspaceId);
+      await syncGitlabRelationsForIssues(
+        projectId,
+        integration.id,
+        config.projectPath,
+        [issue.iid],
+      );
     } catch (error) {
-      console.error("Failed to sync GitLab label catalog:", error);
+      console.error("Failed to sync GitLab task relations:", error);
     }
 
     await syncGitlabLabelsToTask(
@@ -186,12 +225,15 @@ export async function handleGitlabIssueOpened(
 
     try {
       const labelsToAdd: string[] = [];
+
       if (priority && !existingLabels.includes(`priority:${priority}`)) {
         labelsToAdd.push(`priority:${priority}`);
       }
+
       if (status && !existingLabels.includes(`status:${status}`)) {
         labelsToAdd.push(`status:${status}`);
       }
+
       if (labelsToAdd.length > 0) {
         await addLabelsToIssueGitlab(config, issue.iid, labelsToAdd);
       }

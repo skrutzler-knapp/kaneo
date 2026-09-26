@@ -27,8 +27,8 @@ import createGitlabIntegration from "./controllers/create-gitlab-integration";
 import deleteGitlabIntegration from "./controllers/delete-gitlab-integration";
 import getGitlabIntegration from "./controllers/get-gitlab-integration";
 import { importGitlabIssues } from "./controllers/import-gitlab-issues";
-import { syncGitlabAssigneesForImportedIssues } from "./controllers/sync-gitlab-assignees";
 import listGitlabProjects from "./controllers/list-gitlab-projects";
+import { syncGitlabAssigneesForImportedIssues } from "./controllers/sync-gitlab-assignees";
 import verifyGitlabAccess from "./controllers/verify-gitlab-access";
 import {
   gitlabDeleteResultSchema,
@@ -333,10 +333,13 @@ const gitlabIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
       try {
         await syncGitlabAssigneesForImportedIssues(projectId);
       } catch (error) {
-        console.error("Failed to reconcile GitLab assignees after settings update", {
-          projectId,
-          error,
-        });
+        console.error(
+          "Failed to reconcile GitLab assignees after settings update",
+          {
+            projectId,
+            error,
+          },
+        );
       }
     }
 

@@ -1,12 +1,12 @@
 import type { GitlabConfig } from "../config";
+import { normalizeProjectPath } from "../config";
+import type { GitlabIssueLink } from "./gitlab-api";
 import {
-  GitlabApiError,
   createGitlabClient,
+  GitlabApiError,
   gitlabFetch,
   tokenTypeOf,
 } from "./gitlab-api";
-import { normalizeProjectPath } from "../config";
-import type { GitlabIssueLink } from "./gitlab-api";
 
 export function isUnsupportedGitlabHierarchyParent(error: unknown): boolean {
   return (
@@ -23,15 +23,10 @@ export async function createRelatedIssueLink(
   childIid: number,
   linkType: GitlabIssueLink["link_type"] = "relates_to",
 ): Promise<void> {
-  const project = await createGitlabClient(config).getProject(config.projectPath);
+  const client = createGitlabClient(config);
+  const project = await client.getProject(config.projectPath);
   const path = `/projects/${encodeURIComponent(normalizeProjectPath(config.projectPath))}/issues/${parentIid}/links`;
-  const links =
-    (await gitlabFetch<GitlabIssueLink[]>(
-      config.baseUrl,
-      config.accessToken,
-      tokenTypeOf(config),
-      path,
-    )) ?? [];
+  const links = await client.listIssueLinks(config.projectPath, parentIid);
   const alreadyLinked = links.some(
     (link) =>
       link.link_type === linkType &&

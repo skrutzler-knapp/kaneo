@@ -7,8 +7,8 @@ import {
   formatIssueTitle,
   getLabelsForIssue,
 } from "../../github/utils/format";
-import type { PluginContext, TaskCreatedEvent } from "../../types";
 import { getCustomTaskLabelNames } from "../../task-labels";
+import type { PluginContext, TaskCreatedEvent } from "../../types";
 import type { GiteaConfig } from "../config";
 import { createGiteaClient } from "../utils/gitea-api";
 import { addLabelsToIssueGitea } from "../utils/labels";

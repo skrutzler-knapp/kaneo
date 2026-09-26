@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   existingLabels: [] as Array<{ id: string; name: string; color: string }>,
   insertedValues: [] as Array<Record<string, unknown>>,
+  updatedValues: [] as Array<Record<string, unknown>>,
   published: vi.fn(),
   listLabels: vi.fn(),
 }));
@@ -27,7 +28,11 @@ vi.mock("../../../../../apps/api/src/database", () => ({
         }),
       }),
     }),
-    update: () => ({ set: () => ({ where: async () => undefined }) }),
+    update: () => ({
+      set: (values: Record<string, unknown>) => ({
+        where: async () => mocks.updatedValues.push(values),
+      }),
+    }),
   },
 }));
 
@@ -36,16 +41,19 @@ vi.mock("../../../../../apps/api/src/events", () => ({
 }));
 
 vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api", () => ({
-  createGitlabClient: () => ({ listLabels: (...args: unknown[]) => mocks.listLabels(...args) }),
+  createGitlabClient: () => ({
+    listLabels: (...args: unknown[]) => mocks.listLabels(...args),
+  }),
 }));
 
-const { syncGitlabLabelCatalog } = await import(
+const { ensureGitlabWorkspaceLabels, syncGitlabLabelCatalog } = await import(
   "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-label-catalog"
 );
 
 beforeEach(() => {
   mocks.existingLabels = [];
   mocks.insertedValues = [];
+  mocks.updatedValues = [];
   mocks.published.mockReset();
   mocks.listLabels.mockResolvedValue([
     { name: "backend", color: "#123456" },
@@ -56,7 +64,15 @@ beforeEach(() => {
 });
 
 describe("syncGitlabLabelCatalog", () => {
-  it("imports all project labels for filters except status and priority metadata", async () => {
+  it("inserts missing project labels without recoloring existing workspace labels", async () => {
+    mocks.existingLabels = [
+      {
+        id: "label-backend",
+        name: "backend",
+        color: "#987654",
+      },
+    ];
+
     await syncGitlabLabelCatalog(
       {
         baseUrl: "https://gitlab.example.com",
@@ -70,21 +86,54 @@ describe("syncGitlabLabelCatalog", () => {
     expect(mocks.listLabels).toHaveBeenCalledWith("acme/web");
     expect(mocks.insertedValues).toEqual([
       {
-        name: "backend",
-        color: "#123456",
-        taskId: null,
-        workspaceId: "workspace-1",
-      },
-      {
         name: "customer-visible",
         color: "#abcdef",
         taskId: null,
         workspaceId: "workspace-1",
       },
     ]);
+    expect(mocks.updatedValues).toEqual([]);
     expect(mocks.published).toHaveBeenCalledWith("workspace.labels_updated", {
       projectId: "project-1",
       workspaceId: "workspace-1",
     });
+  });
+
+  it("ensures only payload labels and publishes only when a label is inserted", async () => {
+    mocks.existingLabels = [
+      {
+        id: "label-existing",
+        name: "existing",
+        color: "#987654",
+      },
+    ];
+    const labels = [
+      { title: "existing", color: "#123456" },
+      { title: "new-label", color: "abcdef" },
+      { title: "priority:high", color: "#ff0000" },
+    ];
+
+    mocks.listLabels.mockClear();
+    await ensureGitlabWorkspaceLabels("project-1", "workspace-1", labels);
+
+    expect(mocks.listLabels).not.toHaveBeenCalled();
+    expect(mocks.insertedValues).toEqual([
+      {
+        name: "new-label",
+        color: "#abcdef",
+        taskId: null,
+        workspaceId: "workspace-1",
+      },
+    ]);
+    expect(mocks.updatedValues).toEqual([]);
+    expect(mocks.published).toHaveBeenCalledTimes(1);
+
+    mocks.published.mockClear();
+    mocks.insertedValues = [];
+    await ensureGitlabWorkspaceLabels("project-1", "workspace-1", [
+      { title: "existing", color: "#ffffff" },
+    ]);
+    expect(mocks.published).not.toHaveBeenCalled();
+    expect(mocks.updatedValues).toEqual([]);
   });
 });

@@ -16,13 +16,17 @@ const mocks = vi.hoisted(() => ({
   recordGitlabTaskRelation: vi.fn(),
 }));
 
-vi.mock("../../../../../apps/api/src/plugins/github/services/link-manager", () => ({
-  createExternalLink: (...args: unknown[]) => mocks.createExternalLink(...args),
-  findExternalLinkByTaskAndType: (...args: unknown[]) =>
-    mocks.findExternalLinkByTaskAndType(...args),
-  findSubtaskRelationsByTask: (...args: unknown[]) =>
-    mocks.findSubtaskRelationsByTask(...args),
-}));
+vi.mock(
+  "../../../../../apps/api/src/plugins/github/services/link-manager",
+  () => ({
+    createExternalLink: (...args: unknown[]) =>
+      mocks.createExternalLink(...args),
+    findExternalLinkByTaskAndType: (...args: unknown[]) =>
+      mocks.findExternalLinkByTaskAndType(...args),
+    findSubtaskRelationsByTask: (...args: unknown[]) =>
+      mocks.findSubtaskRelationsByTask(...args),
+  }),
+);
 
 vi.mock("../../../../../apps/api/src/plugins/github/utils/format", () => ({
   formatIssueBody: (...args: unknown[]) => mocks.formatIssueBody(...args),
@@ -36,14 +40,21 @@ vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/gitlab-api", () => ({
   }),
 }));
 
-vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent", () => ({
-  setGitlabSubtaskParent: (...args: unknown[]) => mocks.setSubtaskParent(...args),
-}));
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent",
+  () => ({
+    setGitlabSubtaskParent: (...args: unknown[]) =>
+      mocks.setSubtaskParent(...args),
+  }),
+);
 
-vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/sync-task-labels-to-gitlab", () => ({
-  syncTaskLabelsToGitlab: (...args: unknown[]) =>
-    mocks.syncTaskLabelsToGitlab(...args),
-}));
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-task-labels-to-gitlab",
+  () => ({
+    syncTaskLabelsToGitlab: (...args: unknown[]) =>
+      mocks.syncTaskLabelsToGitlab(...args),
+  }),
+);
 
 vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/labels", () => ({
   addLabelsToIssueGitlab: (...args: unknown[]) =>

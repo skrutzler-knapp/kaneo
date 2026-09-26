@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
     updateTaskStatus: vi.fn(),
     publishEvent: vi.fn(),
     syncGitlabLabelsToTask: vi.fn(),
-    syncGitlabLabelCatalog: vi.fn(),
+    ensureGitlabWorkspaceLabels: vi.fn(),
     syncGitlabRelationsForIssues: vi.fn(),
     taskFindFirst: vi.fn(),
     db: {
@@ -72,8 +72,8 @@ vi.mock(
 vi.mock(
   "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-label-catalog",
   () => ({
-    syncGitlabLabelCatalog: (...args: unknown[]) =>
-      mocks.syncGitlabLabelCatalog(...args),
+    ensureGitlabWorkspaceLabels: (...args: unknown[]) =>
+      mocks.ensureGitlabWorkspaceLabels(...args),
   }),
 );
 
@@ -146,7 +146,11 @@ beforeEach(() => {
     userId: null,
   });
   mocks.updateExternalLink.mockResolvedValue(undefined);
-  mocks.syncGitlabRelationsForIssues.mockResolvedValue({ created: 0, deleted: 0 });
+  mocks.syncGitlabRelationsForIssues.mockResolvedValue({
+    created: 0,
+    deleted: 0,
+  });
+  mocks.ensureGitlabWorkspaceLabels.mockResolvedValue(undefined);
 });
 
 describe("handleGitlabIssueUpdated", () => {
@@ -181,6 +185,29 @@ describe("handleGitlabIssueUpdated", () => {
     await handleGitlabIssueUpdated(titleChangedPayload("Edited in GitLab"));
 
     expect(mocks.taskUpdates).toEqual([{ title: "Edited in GitLab" }]);
+  });
+
+  it("continues issue field synchronization when relation sync fails", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+      metadata: JSON.stringify({ state: "open" }),
+    });
+    mocks.syncGitlabRelationsForIssues.mockRejectedValueOnce(
+      new Error("Work item hierarchy unavailable"),
+    );
+
+    await handleGitlabIssueUpdated(titleChangedPayload("Updated in GitLab"));
+
+    expect(mocks.taskUpdates).toContainEqual({ title: "Updated in GitLab" });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to sync GitLab task relations:",
+      expect.any(Error),
+    );
+    consoleError.mockRestore();
   });
 
   it("reconciles relations when an update changes neither text nor labels", async () => {
@@ -250,6 +277,13 @@ describe("handleGitlabIssueUpdated", () => {
         taskId: "task-1",
       }),
     );
+    expect(mocks.publishEvent).toHaveBeenCalledWith("task.unassigned", {
+      taskId: "task-1",
+      projectId: "project-1",
+      userId: null,
+      title: "Old title",
+      type: "unassigned",
+    });
     expect(mocks.updateExternalLink).toHaveBeenCalledWith(
       "link-1",
       expect.objectContaining({
@@ -375,10 +409,10 @@ describe("handleGitlabIssueUpdated", () => {
       fullLabels,
       ["backend"],
     );
-    expect(mocks.syncGitlabLabelCatalog).toHaveBeenCalledWith(
-      expect.objectContaining({ projectPath: "usekaneo/kaneo" }),
+    expect(mocks.ensureGitlabWorkspaceLabels).toHaveBeenCalledWith(
       "project-1",
       "workspace-1",
+      fullLabels,
     );
   });
 });

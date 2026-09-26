@@ -15,9 +15,13 @@ vi.mock(
   }),
 );
 
-vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent", () => ({
-  setGitlabSubtaskParent: (...args: unknown[]) => mocks.setSubtaskParent(...args),
-}));
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/set-subtask-parent",
+  () => ({
+    setGitlabSubtaskParent: (...args: unknown[]) =>
+      mocks.setSubtaskParent(...args),
+  }),
+);
 
 vi.mock(
   "../../../../../apps/api/src/plugins/gitlab/utils/create-related-issue-link",
@@ -37,7 +41,7 @@ vi.mock(
 );
 
 const { handleTaskRelationCreated } = await import(
-  "../../../../../apps/api/src/plugins/gitlab/events/task-relation-created-idempotent"
+  "../../../../../apps/api/src/plugins/gitlab/events/task-relation-created"
 );
 
 const context = {
