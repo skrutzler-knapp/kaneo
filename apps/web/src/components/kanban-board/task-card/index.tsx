@@ -11,7 +11,6 @@ type TaskCardProps = {
   isFinalColumn?: boolean;
   dragData?: { type: "subtask"; parentTaskId: string };
   subtaskCount?: number;
-  nestedSubtaskCount?: number;
   subtasksExpanded?: boolean;
   groupSubtasks?: boolean;
   onToggleSubtasks?: () => void;
@@ -23,7 +22,6 @@ function TaskCard({
   isFinalColumn,
   dragData,
   subtaskCount,
-  nestedSubtaskCount,
   subtasksExpanded,
   groupSubtasks,
   onToggleSubtasks,
@@ -68,7 +66,6 @@ function TaskCard({
         isDragging={isDragging}
         dragListeners={listeners}
         subtaskCount={subtaskCount}
-        nestedSubtaskCount={nestedSubtaskCount}
         subtasksExpanded={subtasksExpanded}
         groupSubtasks={groupSubtasks}
         onToggleSubtasks={onToggleSubtasks}

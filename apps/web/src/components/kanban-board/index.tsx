@@ -543,7 +543,6 @@ function KanbanBoard({
                 key={expansion.parent.id}
                 {...expansion}
                 columns={boardState.columns}
-                subtasksByParentId={boardState.subtasksByParentId}
                 columnCount={boardState.columns.length}
                 disableDragDrop={disableDragDrop}
               />
