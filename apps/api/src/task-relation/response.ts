@@ -16,6 +16,7 @@ const relatedTaskSchema = z
     projectId: z.string(),
     userId: z.string().nullable(),
     assigneeName: z.string().nullable(),
+    assigneeUsername: z.string().nullable().optional(),
     assigneeImage: z.string().nullable(),
   })
   .openapi("RelatedTask");

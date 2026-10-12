@@ -1721,7 +1721,10 @@
 			"chooseProjectDescription": "경로를 입력하거나 목록에서 선택하세요.",
 			"noSearchMatchTitle": "일치하는 프로젝트 없음",
 			"useProject": "프로젝트 사용",
-			"webhookEvents": "푸시, 이슈, 댓글, 머지 리퀘스트 이벤트를 켜세요."
+			"webhookEvents": "푸시, 이슈, 댓글, 머지 리퀘스트 이벤트를 켜세요.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

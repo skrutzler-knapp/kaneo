@@ -1908,7 +1908,10 @@
 			"chooseProjectDescription": "Type its path or pick one from the list.",
 			"noSearchMatchTitle": "No matching projects",
 			"useProject": "Use project",
-			"webhookEvents": "Turn on push, issue, comment, and merge request events."
+			"webhookEvents": "Turn on push, issue, comment, and merge request events.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"slackIntegration": {
 			"validation": {

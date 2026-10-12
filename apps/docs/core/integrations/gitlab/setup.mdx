@@ -61,6 +61,12 @@ The webhook URL includes your integration id, for example:
 
 `https://your-kaneo-host/api/gitlab-integration/webhook/<integrationId>`
 
+## Assignee ownership
+
+Enable **GitLab manages assignees** in the connected project's integration settings to show GitLab names, usernames, and avatars without mapping them to Kaneo users. Change those assignments in GitLab: Kaneo's assignment controls are locked, and its API rejects assignment changes while this setting is enabled.
+
+Turn the setting off to assign Kaneo users again. Provider identities are not automatically matched to local accounts.
+
 ## Labels and subtasks
 
 When a task is eligible for synchronization, Kaneo copies its workspace labels to the linked GitLab issue. GitLab issue labels are also imported into the Kaneo workspace and applied to the linked task. Status and priority labels remain managed separately.

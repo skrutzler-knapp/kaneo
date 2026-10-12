@@ -2348,7 +2348,10 @@
 			"chooseProjectDescription": "Wpisz jego ścieżkę lub wybierz z listy.",
 			"noSearchMatchTitle": "Brak pasujących projektów",
 			"useProject": "Użyj projektu",
-			"webhookEvents": "Włącz zdarzenia push, zgłoszeń, komentarzy i merge requestów."
+			"webhookEvents": "Włącz zdarzenia push, zgłoszeń, komentarzy i merge requestów.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

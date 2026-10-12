@@ -256,6 +256,12 @@
               "null"
             ]
           },
+          "assigneeUsername": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "assigneeId": {
             "type": [
               "string",
@@ -1348,7 +1354,19 @@
                   "null"
                 ]
               },
+              "assigneeUsername": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "assigneeId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "assigneeImage": {
                 "type": [
                   "string",
                   "null"
@@ -1358,7 +1376,8 @@
             "required": [
               "columnId",
               "assigneeName",
-              "assigneeId"
+              "assigneeId",
+              "assigneeImage"
             ]
           }
         ]
@@ -3486,6 +3505,10 @@
             "type": "boolean",
             "description": "When on, Kaneo comments a link back to the task on each issue opened in GitLab. Issues Kaneo creates from tasks are not commented on."
           },
+          "gitlabOwnsAssignees": {
+            "type": "boolean",
+            "description": "When on, GitLab is authoritative for assignees: GitLab assignees are shown as provider identities (name, username, avatar) without linking Kaneo users, and Kaneo-side assignment changes are rejected with 409."
+          },
           "isActive": {
             "type": [
               "boolean",
@@ -3986,6 +4009,12 @@
             ]
           },
           "assigneeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assigneeUsername": {
             "type": [
               "string",
               "null"
@@ -11389,7 +11418,7 @@
             }
           },
           "409": {
-            "description": "A selected workspace label is being deleted",
+            "description": "A selected workspace label is being deleted, or assignees are managed by GitLab",
             "content": {
               "application/json": {
                 "schema": {
@@ -11818,6 +11847,16 @@
           },
           "404": {
             "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task assignees are managed by GitLab",
             "content": {
               "application/json": {
                 "schema": {
@@ -12485,6 +12524,16 @@
           },
           "404": {
             "description": "Task not found, or assignee is not a member of the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task assignees are managed by GitLab",
             "content": {
               "application/json": {
                 "schema": {
@@ -18644,6 +18693,9 @@
                     "type": "boolean"
                   },
                   "commentTaskLinkOnGitlabIssue": {
+                    "type": "boolean"
+                  },
+                  "gitlabOwnsAssignees": {
                     "type": "boolean"
                   }
                 }

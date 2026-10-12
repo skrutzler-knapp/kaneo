@@ -1721,7 +1721,10 @@
 			"chooseProjectDescription": "输入路径，或从列表中选择。",
 			"noSearchMatchTitle": "没有匹配的项目",
 			"useProject": "使用此项目",
-			"webhookEvents": "启用 push、issue、comment 和 merge request 事件。"
+			"webhookEvents": "启用 push、issue、comment 和 merge request 事件。",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "日历订阅",

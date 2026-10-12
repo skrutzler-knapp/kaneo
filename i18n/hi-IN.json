@@ -1731,7 +1731,10 @@
 			"chooseProjectDescription": "उसका पाथ लिखें या सूची से चुनें।",
 			"noSearchMatchTitle": "कोई मेल खाता प्रोजेक्ट नहीं",
 			"useProject": "प्रोजेक्ट उपयोग करें",
-			"webhookEvents": "पुश, इश्यू, कमेंट और मर्ज रिक्वेस्ट इवेंट चालू करें।"
+			"webhookEvents": "पुश, इश्यू, कमेंट और मर्ज रिक्वेस्ट इवेंट चालू करें।",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

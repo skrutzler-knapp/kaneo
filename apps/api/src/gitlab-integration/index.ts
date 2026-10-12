@@ -29,6 +29,7 @@ import deleteGitlabIntegration from "./controllers/delete-gitlab-integration";
 import getGitlabIntegration from "./controllers/get-gitlab-integration";
 import { importGitlabIssues } from "./controllers/import-gitlab-issues";
 import listGitlabProjects from "./controllers/list-gitlab-projects";
+import { syncGitlabAssigneesForImportedIssues } from "./controllers/sync-gitlab-assignees";
 import verifyGitlabAccess from "./controllers/verify-gitlab-access";
 import {
   gitlabDeleteResultSchema,
@@ -303,6 +304,12 @@ const gitlabIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
         commentTaskLinkOnGitlabIssue: body.commentTaskLinkOnGitlabIssue,
       };
     }
+    if (body.gitlabOwnsAssignees !== undefined) {
+      config = {
+        ...config,
+        gitlabOwnsAssignees: body.gitlabOwnsAssignees,
+      };
+    }
 
     const validation = await validateGitlabConfig(config);
     if (!validation.valid) {
@@ -331,6 +338,20 @@ const gitlabIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
         message: "Integration changed; refresh before updating settings",
       });
 
+    if (body.gitlabOwnsAssignees === true) {
+      try {
+        await syncGitlabAssigneesForImportedIssues(projectId);
+      } catch (error) {
+        console.error(
+          "Failed to reconcile GitLab assignees after settings update",
+          {
+            projectId,
+            error,
+          },
+        );
+      }
+    }
+
     const updated = await getGitlabIntegration(projectId, true);
     if (!updated) {
       throw new HTTPException(500, { message: "Failed to load integration" });
@@ -351,6 +372,14 @@ const gitlabIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
   .openapi(importIssuesRoute, async (c) => {
     const { projectId } = c.req.valid("json");
     const result = await importGitlabIssues(projectId);
+    try {
+      await syncGitlabAssigneesForImportedIssues(projectId);
+    } catch (error) {
+      result.errors = [
+        ...(result.errors ?? []),
+        `Assignee sync: ${error instanceof Error ? error.message : String(error)}`,
+      ];
+    }
     return c.json(result, 200);
   });
 

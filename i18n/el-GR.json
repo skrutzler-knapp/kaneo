@@ -1731,7 +1731,10 @@
 			"chooseProjectDescription": "Πληκτρολογήστε τη διαδρομή του ή επιλέξτε ένα από τη λίστα.",
 			"noSearchMatchTitle": "Κανένα έργο δεν ταιριάζει",
 			"useProject": "Χρήση έργου",
-			"webhookEvents": "Ενεργοποιήστε τα γεγονότα push, issue, comment και merge request."
+			"webhookEvents": "Ενεργοποιήστε τα γεγονότα push, issue, comment και merge request.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

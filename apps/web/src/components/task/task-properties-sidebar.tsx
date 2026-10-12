@@ -224,12 +224,15 @@ export default function TaskPropertiesSidebar({
                     variant="ghost"
                     size="sm"
                     className="justify-start h-7 px-1.5 gap-1.5"
+                    title={task.assigneeUsername ?? undefined}
                   >
-                    {task.userId ? (
+                    {task.userId || task.assigneeName ? (
                       <Avatar className="h-[16px] w-[16px]">
                         <AvatarImage
-                          src={assignee?.user?.image ?? ""}
-                          alt={assignee?.user?.name || ""}
+                          src={
+                            assignee?.user?.image ?? task.assigneeImage ?? ""
+                          }
+                          alt={assignee?.user?.name || task.assigneeName || ""}
                         />
                         <AvatarFallback className="text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
                           {getInitials(
@@ -373,12 +376,17 @@ export default function TaskPropertiesSidebar({
                       variant="ghost"
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5"
+                      title={task.assigneeUsername ?? undefined}
                     >
-                      {task.userId ? (
+                      {task.userId || task.assigneeName ? (
                         <Avatar className="h-[16px] w-[16px]">
                           <AvatarImage
-                            src={assignee?.user?.image ?? ""}
-                            alt={assignee?.user?.name || ""}
+                            src={
+                              assignee?.user?.image ?? task.assigneeImage ?? ""
+                            }
+                            alt={
+                              assignee?.user?.name || task.assigneeName || ""
+                            }
                           />
                           <AvatarFallback className="text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
@@ -522,12 +530,17 @@ export default function TaskPropertiesSidebar({
                       variant="ghost"
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5 w-full"
+                      title={task.assigneeUsername ?? undefined}
                     >
-                      {task.userId ? (
+                      {task.userId || task.assigneeName ? (
                         <Avatar className="h-[16px] w-[16px]">
                           <AvatarImage
-                            src={assignee?.user?.image ?? ""}
-                            alt={assignee?.user?.name || ""}
+                            src={
+                              assignee?.user?.image ?? task.assigneeImage ?? ""
+                            }
+                            alt={
+                              assignee?.user?.name || task.assigneeName || ""
+                            }
                           />
                           <AvatarFallback className="text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(

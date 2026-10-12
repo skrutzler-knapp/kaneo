@@ -18,6 +18,7 @@ import { GitlabIntegrationSettings } from "./gitlab-integration-settings";
 const m = vi.hoisted(() => ({
   verify: vi.fn(),
   create: vi.fn(),
+  update: vi.fn(),
   importIssues: vi.fn(),
   refetch: vi.fn(),
   query: {
@@ -67,7 +68,10 @@ vi.mock(
 vi.mock(
   "@/hooks/mutations/gitlab-integration/use-update-gitlab-integration",
   () => ({
-    useUpdateGitlabIntegration: () => ({ mutateAsync: vi.fn() }),
+    useUpdateGitlabIntegration: () => ({
+      mutateAsync: m.update,
+      isPending: false,
+    }),
   }),
 );
 vi.mock(
@@ -96,6 +100,7 @@ afterEach(() => {
 beforeEach(() => {
   permissions.create = true;
   permissions.update = true;
+  m.update.mockResolvedValue({});
   m.query.current = { data: null, isLoading: false, error: null };
   m.verify.mockResolvedValue({
     isInstalled: true,
@@ -167,6 +172,29 @@ describe("GitLab setup", () => {
 });
 
 describe("connected GitLab project", () => {
+  it.each([false, true])(
+    "toggles GitLab assignee ownership from %s",
+    async (ownsAssignees) => {
+      m.query.current = {
+        data: { ...saved, gitlabOwnsAssignees: ownsAssignees },
+        isLoading: false,
+        error: null,
+      };
+      render(<GitlabIntegrationSettings projectId="project" />);
+      const toggle = screen.getByRole("switch", {
+        name: "settings:gitlabIntegration.assigneeSourceTitle",
+      });
+      expect(toggle).toHaveAttribute("aria-checked", String(ownsAssignees));
+      fireEvent.click(toggle);
+      await waitFor(() =>
+        expect(m.update).toHaveBeenCalledWith({
+          projectId: "project",
+          json: { gitlabOwnsAssignees: !ownsAssignees },
+        }),
+      );
+    },
+  );
+
   it("imports issues without asking for the token again", async () => {
     m.query.current = { data: saved, isLoading: false, error: null };
     m.importIssues.mockResolvedValue({});

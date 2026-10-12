@@ -1,12 +1,19 @@
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import db from "../../database";
 import {
+  externalLinkTable,
+  integrationTable,
   projectTable,
   taskRelationTable,
   taskTable,
   userTable,
 } from "../../database/schema";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
+import {
+  gitlabAssigneeDisplay,
+  gitlabOwnsAssignees,
+  readGitlabAssignees,
+} from "../../plugins/gitlab/utils/assignee-sync";
 import { taskIsCompleted } from "../../task/task-is-completed";
 
 async function getTaskRelations(
@@ -120,6 +127,50 @@ async function getRelationsForTaskScope(
 
     for (const task of taskRows) {
       tasks.set(task.id, task);
+    }
+
+    const externalLinks = await db
+      .select({
+        taskId: externalLinkTable.taskId,
+        integrationId: externalLinkTable.integrationId,
+        metadata: externalLinkTable.metadata,
+        integrationConfig: integrationTable.config,
+      })
+      .from(externalLinkTable)
+      .innerJoin(
+        integrationTable,
+        eq(externalLinkTable.integrationId, integrationTable.id),
+      )
+      .where(
+        and(
+          inArray(externalLinkTable.taskId, [...taskIds]),
+          eq(externalLinkTable.resourceType, "issue"),
+          eq(integrationTable.type, "gitlab"),
+          eq(integrationTable.isActive, true),
+        ),
+      );
+
+    const gitlabOwnershipByIntegrationId = new Map<string, boolean>();
+    for (const externalLink of externalLinks) {
+      if (!externalLink.integrationId) continue;
+      let ownsAssignees = gitlabOwnershipByIntegrationId.get(
+        externalLink.integrationId,
+      );
+      if (ownsAssignees === undefined) {
+        ownsAssignees = gitlabOwnsAssignees(externalLink.integrationConfig);
+        gitlabOwnershipByIntegrationId.set(
+          externalLink.integrationId,
+          ownsAssignees,
+        );
+      }
+      if (!ownsAssignees) continue;
+      const task = tasks.get(externalLink.taskId);
+      if (!task) continue;
+      tasks.set(externalLink.taskId, {
+        ...task,
+        userId: null,
+        ...gitlabAssigneeDisplay(readGitlabAssignees(externalLink.metadata)),
+      });
     }
   }
 

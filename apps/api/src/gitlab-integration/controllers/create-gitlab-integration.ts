@@ -33,6 +33,9 @@ function pickSettings(config: Partial<GitlabConfig>): Partial<GitlabConfig> {
   if (config.commentTaskLinkOnGitlabIssue !== undefined) {
     settings.commentTaskLinkOnGitlabIssue = config.commentTaskLinkOnGitlabIssue;
   }
+  if (config.gitlabOwnsAssignees !== undefined) {
+    settings.gitlabOwnsAssignees = config.gitlabOwnsAssignees;
+  }
   if (config.statusTransitions !== undefined) {
     settings.statusTransitions = config.statusTransitions;
   }

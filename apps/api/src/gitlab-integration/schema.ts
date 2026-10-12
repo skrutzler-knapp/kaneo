@@ -35,4 +35,5 @@ export const createGitlabBody = z.object({
 export const updateGitlabBody = z.object({
   isActive: z.boolean().optional(),
   commentTaskLinkOnGitlabIssue: z.boolean().optional(),
+  gitlabOwnsAssignees: z.boolean().optional(),
 });

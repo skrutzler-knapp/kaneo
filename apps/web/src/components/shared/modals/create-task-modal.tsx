@@ -86,6 +86,7 @@ import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
+import useGitlabAssigneeOwnership from "@/hooks/use-gitlab-assignee-ownership";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import { uploadDraftAsset } from "@/lib/upload-draft-asset";
@@ -281,6 +282,8 @@ function CreateTaskModalContent({
     (candidate) => candidate.id === (explicitProjectId || selectedProjectId),
   );
   const resolvedProjectId = resolvedProject?.id ?? "";
+  const assigneesManagedByGitlab =
+    useGitlabAssigneeOwnership(resolvedProjectId);
   const { data: projectMembers } = useGetProjectMembers({
     workspaceId: workspace?.id || "",
     projectId: resolvedProjectId,
@@ -553,7 +556,9 @@ function CreateTaskModalContent({
         await createTask({
           title: title.trim(),
           description: description.trim() || "",
-          userId: selectedUser?.id ?? "",
+          userId: assigneesManagedByGitlab
+            ? undefined
+            : (selectedUser?.id ?? ""),
           priority,
           projectId: resolvedProjectId,
           startDate: startDate ? startDate.toISOString() : undefined,
@@ -1266,8 +1271,14 @@ function CreateTaskModalContent({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
+                    disabled={assigneesManagedByGitlab}
+                    title={
+                      assigneesManagedByGitlab
+                        ? t("settings:gitlabIntegration.assigneeEditLocked")
+                        : undefined
+                    }
                     className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent",
                       selectedUser
                         ? "bg-accent/30 text-foreground"
                         : "text-muted-foreground",

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DisconnectIntegrationButton } from "@/components/project/code-hosting/disconnect-integration-button";
 import { WebhookSection } from "@/components/project/code-hosting/webhook-section";
+import { GitlabAssigneeSection } from "@/components/project/gitlab-integration/gitlab-assignee-section";
 import { GitlabIssuesSection } from "@/components/project/gitlab-integration/gitlab-issues-section";
 import { GitlabRepositorySection } from "@/components/project/gitlab-integration/gitlab-repository-section";
 import { useSaveGitlabIntegration } from "@/components/project/gitlab-integration/use-save-gitlab-integration";
@@ -72,6 +73,10 @@ export function GitlabConnectedPanel({
       <GitlabIssuesSection
         projectId={projectId}
         isConnected={Boolean(integration.isActive)}
+      />
+      <GitlabAssigneeSection
+        projectId={projectId}
+        ownsAssignees={integration.gitlabOwnsAssignees ?? false}
       />
       <SyncRulesSection
         key={`${projectId}:gitlab`}

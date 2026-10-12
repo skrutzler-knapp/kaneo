@@ -1721,7 +1721,10 @@
 			"chooseProjectDescription": "Nhập đường dẫn hoặc chọn từ danh sách.",
 			"noSearchMatchTitle": "Không có dự án phù hợp",
 			"useProject": "Dùng dự án này",
-			"webhookEvents": "Bật các sự kiện push, issue, comment và merge request."
+			"webhookEvents": "Bật các sự kiện push, issue, comment và merge request.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

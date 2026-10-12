@@ -325,7 +325,9 @@ const createTaskRoute = createRoute({
       "No access to the project, or missing task:create, label:update, or parent task:update permission",
     ),
     404: errorResponse("Project, parent task, or workspace label not found"),
-    409: errorResponse("A selected workspace label is being deleted"),
+    409: errorResponse(
+      "A selected workspace label is being deleted, or assignees are managed by GitLab",
+    ),
   },
 });
 
@@ -461,6 +463,7 @@ const updateTaskRoute = createRoute({
       "No access to the project, or missing task:update or task:assign permission",
     ),
     404: errorResponse("Task not found"),
+    409: errorResponse("Task assignees are managed by GitLab"),
   },
 });
 
@@ -621,6 +624,7 @@ const updateTaskAssigneeRoute = createRoute({
     404: errorResponse(
       "Task not found, or assignee is not a member of the workspace",
     ),
+    409: errorResponse("Task assignees are managed by GitLab"),
   },
 });
 

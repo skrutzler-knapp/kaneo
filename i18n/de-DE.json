@@ -1731,7 +1731,10 @@
 			"chooseProjectDescription": "Gib den Pfad ein oder wähle eines aus der Liste.",
 			"noSearchMatchTitle": "Keine passenden Projekte",
 			"useProject": "Projekt verwenden",
-			"webhookEvents": "Aktiviere die Ereignisse Push, Issue, Kommentar und Merge Request."
+			"webhookEvents": "Aktiviere die Ereignisse Push, Issue, Kommentar und Merge Request.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Kalender-Feeds",

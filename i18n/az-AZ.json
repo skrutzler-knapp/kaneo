@@ -1731,7 +1731,10 @@
 			"chooseProjectDescription": "Layihənin yolunu yazın və ya siyahıdan seçin.",
 			"noSearchMatchTitle": "Uyğun layihə yoxdur",
 			"useProject": "Layihədən istifadə et",
-			"webhookEvents": "Göndərmə (push), məsələ, şərh və birləşdirmə sorğusu hadisələrini aktivləşdirin."
+			"webhookEvents": "Göndərmə (push), məsələ, şərh və birləşdirmə sorğusu hadisələrini aktivləşdirin.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

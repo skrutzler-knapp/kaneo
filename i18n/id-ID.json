@@ -1721,7 +1721,10 @@
 			"chooseProjectDescription": "Ketik path proyek atau pilih dari daftar.",
 			"noSearchMatchTitle": "Tidak ada proyek yang cocok",
 			"useProject": "Gunakan proyek",
-			"webhookEvents": "Aktifkan event push, issue, komentar, dan merge request."
+			"webhookEvents": "Aktifkan event push, issue, komentar, dan merge request.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

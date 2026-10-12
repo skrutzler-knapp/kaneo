@@ -1731,7 +1731,10 @@
 			"chooseProjectDescription": "Typ het pad of kies er een uit de lijst.",
 			"noSearchMatchTitle": "Geen overeenkomende projecten",
 			"useProject": "Project gebruiken",
-			"webhookEvents": "Schakel de gebeurtenissen push, issue, reactie en merge request in."
+			"webhookEvents": "Schakel de gebeurtenissen push, issue, reactie en merge request in.",
+			"assigneeSourceTitle": "GitLab manages assignees",
+			"assigneeSourceHint": "When enabled, assignees follow GitLab and cannot be changed in Kaneo. GitLab names, avatars and usernames are shown directly without linking them to Kaneo users.",
+			"assigneeEditLocked": "This assignee is managed by GitLab and cannot be changed in Kaneo."
 		},
 		"calendarFeeds": {
 			"title": "Calendar feeds",

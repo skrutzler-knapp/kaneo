@@ -8092,6 +8092,15 @@
 						},
 						"importPermissionHint": {
 							"type": "string"
+						},
+						"assigneeSourceTitle": {
+							"type": "string"
+						},
+						"assigneeSourceHint": {
+							"type": "string"
+						},
+						"assigneeEditLocked": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -8145,7 +8154,10 @@
 						"loadProjectsError",
 						"openInGitlab",
 						"retry",
-						"importPermissionHint"
+						"importPermissionHint",
+						"assigneeSourceTitle",
+						"assigneeSourceHint",
+						"assigneeEditLocked"
 					]
 				},
 				"slackIntegration": {

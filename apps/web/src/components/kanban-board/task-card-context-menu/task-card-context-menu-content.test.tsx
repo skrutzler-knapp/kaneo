@@ -116,6 +116,10 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
   }),
 }));
 
+vi.mock("@/hooks/use-gitlab-assignee-ownership", () => ({
+  default: () => false,
+}));
+
 vi.mock("@/store/project", () => ({
   default: () => ({
     project: {
