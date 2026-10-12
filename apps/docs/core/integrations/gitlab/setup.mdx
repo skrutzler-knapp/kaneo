@@ -61,6 +61,12 @@ The webhook URL includes your integration id, for example:
 
 `https://your-kaneo-host/api/gitlab-integration/webhook/<integrationId>`
 
+## Labels and subtasks
+
+When a task is eligible for synchronization, Kaneo copies its workspace labels to the linked GitLab issue. GitLab issue labels are also imported into the Kaneo workspace and applied to the linked task. Status and priority labels remain managed separately.
+
+Subtasks are created as GitLab task work items. GitLab permits one hierarchy parent per work item. If a Kaneo task has multiple subtask parents, Kaneo preserves the current GitLab parent and represents the additional parent edges as related-issue links. Removing the current parent in Kaneo allows the next parent to become the GitLab hierarchy parent. If the GitLab instance does not support hierarchy for a work-item type, Kaneo falls back to a related-issue link.
+
 ## GitLab on a private network
 
 By default Kaneo refuses a GitLab URL that resolves to a private or loopback address. If your instance is only reachable inside your network, set `KANEO_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS=true` on the API. The same variable lifts the check for Gitea, notification destinations, and [import sources](/core/migrations), so only enable it on a trusted deployment.

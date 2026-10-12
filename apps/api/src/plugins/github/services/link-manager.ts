@@ -10,12 +10,13 @@ import {
   uncertainOutboundIntents,
   type SyncStamp,
 } from "../utils/sync-echo";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import db from "../../../database";
 import {
   externalLinkTable,
   integrationTable,
   taskTable,
+  taskRelationTable,
 } from "../../../database/schema";
 
 import { externalLinkScope } from "./integration-task-scope";
@@ -141,6 +142,22 @@ export async function findExternalLinksByTask(taskId: string) {
     where: and(eq(externalLinkTable.taskId, taskId), externalLinkScope()),
     with: {
       integration: true,
+    },
+  });
+}
+
+export async function findSubtaskRelationsByTask(taskId: string) {
+  return db.query.taskRelationTable.findMany({
+    where: and(
+      eq(taskRelationTable.relationType, "subtask"),
+      or(
+        eq(taskRelationTable.sourceTaskId, taskId),
+        eq(taskRelationTable.targetTaskId, taskId),
+      ),
+    ),
+    columns: {
+      sourceTaskId: true,
+      targetTaskId: true,
     },
   });
 }

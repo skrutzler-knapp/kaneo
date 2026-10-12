@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => {
     projectFindFirst: vi.fn(),
     createGitlabClient: vi.fn(),
     addLabelsToIssueGitlab: vi.fn(),
+    syncGitlabLabelsToTask: vi.fn(),
+    syncGitlabLabelCatalog: vi.fn(),
     db: {
       transaction: async (run: (tx: unknown) => Promise<unknown>) =>
         run(mocks.db),
@@ -92,6 +94,22 @@ vi.mock("../../../../../apps/api/src/plugins/gitlab/utils/labels", () => ({
     mocks.addLabelsToIssueGitlab(...args),
 }));
 
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-labels-to-task",
+  () => ({
+    syncGitlabLabelsToTask: (...args: unknown[]) =>
+      mocks.syncGitlabLabelsToTask(...args),
+  }),
+);
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/sync-gitlab-label-catalog",
+  () => ({
+    syncGitlabLabelCatalog: (...args: unknown[]) =>
+      mocks.syncGitlabLabelCatalog(...args),
+  }),
+);
+
 const integration = {
   id: "integration-1",
   projectId: "project-1",
@@ -102,6 +120,7 @@ const integration = {
     baseUrl: "https://gitlab.com",
     projectPath: "usekaneo/kaneo",
     accessToken: "token",
+    commentTaskLinkOnGitlabIssue: false,
   }),
 };
 
@@ -168,6 +187,33 @@ describe("handleGitlabIssueOpened", () => {
         url: "https://gitlab.com/usekaneo/kaneo/-/issues/42",
       }),
       mocks.db,
+    );
+  });
+
+  it("imports every custom GitLab label when creating a task", async () => {
+    mocks.projectFindFirst.mockResolvedValue({
+      id: "project-1",
+      workspaceId: "workspace-1",
+      slug: "KAN",
+    });
+    const payload = issueOpenedPayload([
+      { title: "backend", color: "#123456" },
+      { title: "customer-visible", color: "#abcdef" },
+      { title: "priority:high", color: "#ff0000" },
+    ]);
+
+    await handleGitlabIssueOpened(payload);
+
+    expect(mocks.syncGitlabLabelsToTask).toHaveBeenCalledWith(
+      "task-1",
+      "project-1",
+      "workspace-1",
+      payload.labels,
+    );
+    expect(mocks.syncGitlabLabelCatalog).toHaveBeenCalledWith(
+      expect.objectContaining({ projectPath: "usekaneo/kaneo" }),
+      "project-1",
+      "workspace-1",
     );
   });
 
