@@ -80,6 +80,8 @@ Subtask, related, and blocking links synchronize between Kaneo and GitLab. Impor
 
 Enable **Work item events** as well as **Issues events** so GitLab task work-item updates reach Kaneo.
 
+GitLab does not send a webhook for every relation edit. Opening a task's details schedules a throttled background check of its linked GitLab relations. The task read does not wait for GitLab, and routine board and list reads do not trigger these checks.
+
 ## GitLab on a private network
 
 By default Kaneo refuses a GitLab URL that resolves to a private or loopback address. If your instance is only reachable inside your network, set `KANEO_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS=true` on the API. The same variable lifts the check for Gitea, notification destinations, and [import sources](/core/migrations), so only enable it on a trusted deployment.

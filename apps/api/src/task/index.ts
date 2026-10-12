@@ -18,6 +18,7 @@ import {
   jsonResponse,
   z,
 } from "../openapi";
+import { notifyTaskViewed } from "../plugins/registry";
 import {
   assertTaskImageKeyMatchesContext,
   createTaskImageUploadUrl,
@@ -978,6 +979,9 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       c.req.valid("query").view === "board",
       c.get("userId"),
     );
+    if (c.req.valid("query").view !== "board") {
+      notifyTaskViewed({ taskId: task.id, projectId: task.projectId });
+    }
 
     return c.json(task, 200);
   })

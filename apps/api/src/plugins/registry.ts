@@ -19,10 +19,14 @@ import type {
   TaskStatusChangedEvent,
   TaskTitleChangedEvent,
   TaskUnassignedEvent,
+  TaskViewedEvent,
 } from "./types";
 
 const plugins = new Map<string, IntegrationPlugin>();
 let eventSubscriptionsInitialized = false;
+const TASK_VIEW_REFRESH_INTERVAL_MS = 60_000;
+const MAX_TRACKED_TASK_VIEWS = 10_000;
+const lastTaskViewRefresh = new Map<string, number>();
 
 export function registerPlugin(plugin: IntegrationPlugin): void {
   if (plugins.has(plugin.type)) {
@@ -352,6 +356,42 @@ function createContext(integration: {
     projectId: integration.projectId,
     config: JSON.parse(integration.config) as Record<string, unknown>,
   };
+}
+
+// Fire-and-forget so task reads never wait on external providers.
+export function notifyTaskViewed(event: TaskViewedEvent): void {
+  if (!listPlugins().some((plugin) => plugin.onTaskViewed)) return;
+
+  const now = Date.now();
+  const lastRefresh = lastTaskViewRefresh.get(event.taskId);
+  if (
+    lastRefresh !== undefined &&
+    now - lastRefresh < TASK_VIEW_REFRESH_INTERVAL_MS
+  ) {
+    return;
+  }
+  if (lastTaskViewRefresh.size >= MAX_TRACKED_TASK_VIEWS) {
+    lastTaskViewRefresh.clear();
+  }
+  lastTaskViewRefresh.set(event.taskId, now);
+
+  void broadcastTaskViewed(event).catch((error) => {
+    console.error("Failed to refresh integrations for viewed task:", error);
+  });
+}
+
+async function broadcastTaskViewed(event: TaskViewedEvent): Promise<void> {
+  const integrations = await getActiveIntegrations(event.projectId);
+  for (const integration of integrations) {
+    const plugin = getPlugin(integration.type);
+    if (!plugin?.onTaskViewed) continue;
+
+    try {
+      await plugin.onTaskViewed(event, createContext(integration));
+    } catch (error) {
+      console.error(`Plugin ${plugin.type} error on task view:`, error);
+    }
+  }
 }
 
 export async function broadcastTaskCreated(
