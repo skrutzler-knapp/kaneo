@@ -49,6 +49,14 @@ async function seedRelation(sourceTaskId: string, targetTaskId: string) {
   return relation;
 }
 
+async function createTask(projectId: string, number: number) {
+  const [task] = await db
+    .insert(schema.taskTable)
+    .values({ projectId, title: `Task ${number}`, number })
+    .returning();
+  return task;
+}
+
 describe("task relation tenant boundaries", () => {
   it("rejects a foreign target and a nonexistent target identically", async () => {
     const own = await context();
@@ -156,5 +164,52 @@ describe("task relation tenant boundaries", () => {
         targetTaskId: target.id,
       }),
     );
+  });
+
+  it("allows only one subtask parent while preserving other relation types", async () => {
+    const own = await context();
+    const secondParent = await createTask(own.task.projectId, 2);
+    const child = await createTask(own.task.projectId, 3);
+    mockAuthenticatedSession(own.user);
+
+    const parentResponses = await Promise.all([
+      request("", "POST", {
+        sourceTaskId: own.task.id,
+        targetTaskId: child.id,
+        relationType: "subtask",
+      }),
+      request("", "POST", {
+        sourceTaskId: secondParent.id,
+        targetTaskId: child.id,
+        relationType: "subtask",
+      }),
+    ]);
+
+    expect(parentResponses.map((response) => response.status).sort()).toEqual([
+      200, 409,
+    ]);
+    const conflict = parentResponses.find(
+      (response) => response.status === 409,
+    );
+    expect(await readErrorBody(conflict!)).toMatchObject({
+      message: "Task already has a subtask parent",
+      code: "CONFLICT",
+    });
+
+    const related = await request("", "POST", {
+      sourceTaskId: secondParent.id,
+      targetTaskId: child.id,
+      relationType: "related",
+    });
+    expect(related.status).toBe(200);
+
+    const relations = await db.query.taskRelationTable.findMany({
+      where: eq(schema.taskRelationTable.targetTaskId, child.id),
+    });
+    expect(relations.map((relation) => relation.relationType).sort()).toEqual([
+      "related",
+      "subtask",
+    ]);
+    expect(m.publish).toHaveBeenCalledTimes(2);
   });
 });

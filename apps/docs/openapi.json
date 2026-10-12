@@ -21081,7 +21081,7 @@
             }
           },
           "409": {
-            "description": "This relation already exists",
+            "description": "This relation already exists, or task already has a subtask parent",
             "content": {
               "application/json": {
                 "schema": {

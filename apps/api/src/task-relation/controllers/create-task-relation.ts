@@ -85,6 +85,16 @@ async function createTaskRelation({
       throw new HTTPException(404, { message: "Target task not found" });
     }
 
+    if (relationType === "subtask") {
+      // Serialize parent assignment on the child so concurrent requests cannot
+      // give it multiple parents.
+      await tx
+        .select({ id: taskTable.id })
+        .from(taskTable)
+        .where(eq(taskTable.id, targetTaskId))
+        .for("update");
+    }
+
     await assertProjectAccess(userId, targetTask.projectId);
 
     const existing = await tx
@@ -111,6 +121,25 @@ async function createTaskRelation({
       throw new HTTPException(409, {
         message: "This relation already exists",
       });
+    }
+
+    if (relationType === "subtask") {
+      const [existingParent] = await tx
+        .select({ id: taskRelationTable.id })
+        .from(taskRelationTable)
+        .where(
+          and(
+            eq(taskRelationTable.targetTaskId, targetTaskId),
+            eq(taskRelationTable.relationType, "subtask"),
+          ),
+        )
+        .limit(1);
+
+      if (existingParent) {
+        throw new HTTPException(409, {
+          message: "Task already has a subtask parent",
+        });
+      }
     }
 
     const [relation] = await tx

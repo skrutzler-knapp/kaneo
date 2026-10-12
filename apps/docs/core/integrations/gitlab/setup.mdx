@@ -72,7 +72,7 @@ Turn the setting off to assign Kaneo users again. Provider identities are not au
 
 When a task is eligible for synchronization, Kaneo copies its workspace labels to the linked GitLab issue. GitLab issue labels are also imported into the Kaneo workspace and applied to the linked task. Status and priority labels remain managed separately.
 
-Subtasks are created as GitLab task work items. GitLab permits one hierarchy parent per work item. If a Kaneo task has multiple subtask parents, Kaneo preserves the current GitLab parent and represents the additional parent edges as related-issue links. Removing the current parent in Kaneo allows the next parent to become the GitLab hierarchy parent. If the GitLab instance does not support hierarchy for a work-item type, Kaneo falls back to a related-issue link.
+Subtasks are created as GitLab task work items, and each Kaneo task has one subtask parent. GitLab also permits one hierarchy parent per work item. For existing data with multiple parent edges, Kaneo preserves the current GitLab parent and represents additional edges as related-issue links. Removing the current parent in Kaneo allows the remaining parent to become the GitLab hierarchy parent. If the GitLab instance does not support hierarchy for a work-item type, Kaneo falls back to a related-issue link.
 
 ## Task relations
 
