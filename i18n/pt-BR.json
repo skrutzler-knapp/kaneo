@@ -2910,7 +2910,8 @@
 			"taskBranchCopied": "Nome da branch copiado",
 			"start": "Início",
 			"startDate": "Data de início",
-			"noDate": "Sem data"
+			"noDate": "Sem data",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Mover tarefa",

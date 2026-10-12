@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "Το όνομα του branch αντιγράφηκε",
 			"start": "Έναρξη",
 			"startDate": "Ημερομηνία έναρξης",
-			"noDate": "Χωρίς ημερομηνία"
+			"noDate": "Χωρίς ημερομηνία",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Μετακίνηση εργασίας",

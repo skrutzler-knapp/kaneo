@@ -2910,7 +2910,8 @@
 			"taskBranchCopied": "Nombre de la rama copiado",
 			"start": "Comenzar",
 			"startDate": "Fecha de inicio",
-			"noDate": "Sin fecha"
+			"noDate": "Sin fecha",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"popover": {
 			"assignee": {

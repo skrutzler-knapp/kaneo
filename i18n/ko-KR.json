@@ -2818,7 +2818,8 @@
 			"taskBranchCopied": "브랜치 이름을 복사했습니다",
 			"start": "시작",
 			"startDate": "시작일",
-			"noDate": "날짜 없음"
+			"noDate": "날짜 없음",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "작업 이동",

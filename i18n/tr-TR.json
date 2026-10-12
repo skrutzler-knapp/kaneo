@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "Branch adı kopyalandı",
 			"start": "Başlat",
 			"startDate": "Başlangıç tarihi",
-			"noDate": "Tarih yok"
+			"noDate": "Tarih yok",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Talebi taşı",

@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "ब्रांच का नाम कॉपी किया गया",
 			"start": "शुरू",
 			"startDate": "शुरू की तारीख",
-			"noDate": "कोई तारीख नहीं"
+			"noDate": "कोई तारीख नहीं",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "कार्य ले जाएँ",

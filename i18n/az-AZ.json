@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "Branch adı kopyalandı",
 			"start": "Başlat",
 			"startDate": "Başlama tarixi",
-			"noDate": "Tarix yoxdur"
+			"noDate": "Tarix yoxdur",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Tapşırığı köçür",

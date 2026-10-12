@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "Branch-Name kopiert",
 			"start": "Start",
 			"startDate": "Startdatum",
-			"noDate": "Kein Datum"
+			"noDate": "Kein Datum",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Aufgabe verschieben",

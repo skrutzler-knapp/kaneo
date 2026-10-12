@@ -2956,7 +2956,8 @@
 			"taskBranchCopied": "Назву гілки скопійовано",
 			"start": "Початок",
 			"startDate": "Дата початку",
-			"noDate": "Немає дати"
+			"noDate": "Немає дати",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Перемістити завдання",

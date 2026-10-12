@@ -3428,7 +3428,8 @@
 			"noDate": "Brak daty",
 			"start": "Początek",
 			"startDate": "Data rozpoczęcia",
-			"title": "Właściwości"
+			"title": "Właściwości",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"relations": {
 			"blocks": "Blokuje",

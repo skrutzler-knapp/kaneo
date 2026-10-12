@@ -2818,7 +2818,8 @@
 			"taskBranchCopied": "已复制分支名称",
 			"start": "开始",
 			"startDate": "开始日期",
-			"noDate": "无日期"
+			"noDate": "无日期",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "移动任务",

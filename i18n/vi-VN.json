@@ -2818,7 +2818,8 @@
 			"taskBranchCopied": "Đã sao chép tên nhánh",
 			"start": "Bắt đầu",
 			"startDate": "Ngày bắt đầu",
-			"noDate": "Không có ngày"
+			"noDate": "Không có ngày",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Di chuyển công việc",

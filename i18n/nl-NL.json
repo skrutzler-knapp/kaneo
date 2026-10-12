@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "Branchnaam gekopieerd",
 			"start": "Start",
 			"startDate": "Startdatum",
-			"noDate": "Geen datum"
+			"noDate": "Geen datum",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"popover": {
 			"assignee": {

@@ -2864,7 +2864,8 @@
 			"taskBranchCopied": "Името на гранката е копирано",
 			"start": "Почеток",
 			"startDate": "Почетен датум",
-			"noDate": "Без датум"
+			"noDate": "Без датум",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "Премести задача",

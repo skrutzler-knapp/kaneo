@@ -2818,7 +2818,8 @@
 			"taskBranchCopied": "ブランチ名をコピーしました",
 			"start": "開始",
 			"startDate": "開始日",
-			"noDate": "日付なし"
+			"noDate": "日付なし",
+			"copyFailed": "Could not copy to clipboard"
 		},
 		"move": {
 			"title": "タスクを移動",

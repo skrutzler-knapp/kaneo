@@ -12087,6 +12087,9 @@
 						},
 						"noDate": {
 							"type": "string"
+						},
+						"copyFailed": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -12098,7 +12101,8 @@
 						"taskBranchCopied",
 						"start",
 						"startDate",
-						"noDate"
+						"noDate",
+						"copyFailed"
 					]
 				},
 				"move": {
