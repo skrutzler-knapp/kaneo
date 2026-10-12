@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
     syncGitlabLabelsToTask: vi.fn(),
     ensureGitlabWorkspaceLabels: vi.fn(),
     syncGitlabRelationsForIssues: vi.fn(),
+    resolveAssignee: vi.fn(),
     db: {
       transaction: async (run: (tx: unknown) => Promise<unknown>) =>
         run(mocks.db),
@@ -49,6 +50,13 @@ vi.mock("../../../../../apps/api/src/plugins/sync/eligibility", () => ({
 }));
 
 vi.mock("../../../../../apps/api/src/database", () => ({ default: mocks.db }));
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/resolve-assignee",
+  () => ({
+    createGitlabAssigneeResolver: () => mocks.resolveAssignee,
+  }),
+);
 
 vi.mock("../../../../../apps/api/src/events", () => ({
   publishEvent: (...args: unknown[]) => mocks.publishEvent(...args),
@@ -154,6 +162,7 @@ function issueOpenedPayload(labels: Array<{ title: string }>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.resolveAssignee.mockResolvedValue(null);
   mocks.lockedIntegration.mockResolvedValue([integration]);
   mocks.insertedValues.length = 0;
   mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([integration]);

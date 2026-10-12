@@ -64,9 +64,15 @@ The webhook URL includes your integration id, for example:
 
 ## Assignee ownership
 
-Enable **GitLab manages assignees** in the connected project's integration settings to show GitLab names, usernames, and avatars without mapping them to Kaneo users. Change those assignments in GitLab: Kaneo's assignment controls are locked, and its API rejects assignment changes while this setting is enabled.
+Enable **GitLab manages assignees** in the connected project's integration settings to make GitLab authoritative. Kaneo shows GitLab names, usernames, and avatars, and links assignments to eligible Kaneo workspace members. Change assignments in GitLab: Kaneo's assignment controls are locked, and its API rejects local assignment changes while this setting is enabled.
 
-Turn the setting off to assign Kaneo users again. Provider identities are not automatically matched to local accounts.
+For GitLab SSO configured through Kaneo's custom OAuth provider, the identity endpoint or discovery URL must belong to the same GitLab instance as the project integration. Kaneo links the SSO provider user ID to the GitLab assignee ID. Without a matching SSO account, Kaneo can link by email when GitLab exposes a public email or confirmed primary email and exactly one eligible Kaneo member has that verified email. Names and usernames are never used for matching.
+
+The link is stored by GitLab instance and immutable user ID, so later email or username changes do not break it. Linked users must have workspace membership and project access and must not be banned or anonymous. Unmatched assignees remain visible as GitLab identities but do not receive Kaneo assignments.
+
+Linked, open tasks appear in **Home** and **My Tasks**. **Inbox** receives new-task and assignment notifications, subject to the user's notification preferences; it is not a list of all assigned tasks. Imports, issue updates, and enabling GitLab ownership reconcile assignments. Signing in, linking SSO, or joining a workspace also schedules background reconciliation of stored snapshots for established identity links and matching SSO accounts, including tasks imported before SSO was linked. First-time email matches are discovered during issue sync or import; re-import issues to link a verified local account created after an earlier import. Duplicating a task in a GitLab-managed project leaves the unlinked copy unassigned.
+
+Kaneo stores one assignee per task. If GitLab supplies several assignees, the first eligible linked user becomes the Kaneo assignee; all GitLab assignee names remain visible. Turn the ownership setting off to assign Kaneo users directly again.
 
 ## Labels and subtasks
 

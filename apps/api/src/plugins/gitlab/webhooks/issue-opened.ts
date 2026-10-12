@@ -24,6 +24,7 @@ import {
 import type { GitlabConfig } from "../config";
 import { findAllIntegrationsByGitlabProject } from "../services/integration-lookup";
 import { snapshotGitlabAssignees } from "../utils/assignee-sync";
+import { createGitlabAssigneeResolver } from "../utils/resolve-assignee";
 import { createGitlabClient } from "../utils/gitlab-api";
 import { taskDescriptionFromIssue } from "../utils/issue-description";
 import { addLabelsToIssueGitlab } from "../utils/labels";
@@ -174,11 +175,17 @@ export async function handleGitlabIssueOpened(
           orderBy: (column, { asc }) => [asc(column.position)],
         });
       const nextTaskNumber = await claimTaskNumber(projectId, tx);
+      const assigneeId = gitlabAssignees
+        ? await createGitlabAssigneeResolver(config, projectId)(
+            gitlabAssignees,
+            tx,
+          )
+        : null;
       const [task] = await tx
         .insert(taskTable)
         .values({
           projectId,
-          userId: null,
+          userId: assigneeId,
           title: issue.title,
           description: taskDescriptionFromIssue(issue.description),
           status: closed ? (targetColumn?.slug ?? "done") : resolvedStatus,

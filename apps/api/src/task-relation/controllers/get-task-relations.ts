@@ -168,7 +168,6 @@ async function getRelationsForTaskScope(
       if (!task) continue;
       tasks.set(externalLink.taskId, {
         ...task,
-        userId: null,
         ...gitlabAssigneeDisplay(readGitlabAssignees(externalLink.metadata)),
       });
     }

@@ -19,6 +19,9 @@ export type GitlabUser = {
   username?: string;
   name?: string;
   avatar_url?: string | null;
+  email?: string | null;
+  public_email?: string | null;
+  confirmed_at?: string | null;
 };
 
 export type GitlabIssue = {
@@ -30,6 +33,8 @@ export type GitlabIssue = {
   state: string;
   labels?: string[];
   author?: GitlabUser | null;
+  assignee?: GitlabUser | null;
+  assignees?: GitlabUser[];
   updated_at?: string;
   confidential?: boolean;
 };
@@ -341,6 +346,13 @@ export function createGitlabClient(
   };
 
   return {
+    async getUser(userId: string): Promise<GitlabUser> {
+      return required(
+        await call<GitlabUser>(`/users/${encodeURIComponent(userId)}`),
+        "user",
+      );
+    },
+
     async getProject(projectPath: string): Promise<GitlabProject> {
       return required(
         await call<GitlabProject>(project(projectPath)),

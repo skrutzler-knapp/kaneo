@@ -154,6 +154,7 @@ export function useUserWebSocket() {
           }
           if (message.type === "NOTIFICATION_CREATED") {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            queryClient.invalidateQueries({ queryKey: ["assigned-tasks"] });
           }
         } catch {
           // Ignore malformed messages

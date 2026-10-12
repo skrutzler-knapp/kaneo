@@ -80,8 +80,6 @@ async function getTask(taskId: string, board = false, userId?: string) {
   if (externalLink && gitlabOwnsAssignees(externalLink.config)) {
     taskDetails = {
       ...taskDetails,
-      userId: null,
-      assigneeId: null,
       ...gitlabAssigneeDisplay(readGitlabAssignees(externalLink.metadata)),
     };
   }

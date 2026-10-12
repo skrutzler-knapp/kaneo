@@ -76,6 +76,30 @@ export const sessionTable = pgTable(
   (table) => [index("session_userId_idx").on(table.userId)],
 );
 
+export const gitlabUserIdentityTable = pgTable(
+  "gitlab_user_identity",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    baseUrl: text("base_url").notNull(),
+    gitlabUserId: text("gitlab_user_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("gitlab_user_identity_instance_user_unique").on(
+      table.baseUrl,
+      table.gitlabUserId,
+    ),
+    index("gitlab_user_identity_user_idx").on(table.userId),
+  ],
+);
+
 export const accountTable = pgTable(
   "account",
   {

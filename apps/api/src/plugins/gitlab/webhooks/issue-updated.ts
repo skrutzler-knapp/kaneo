@@ -21,6 +21,8 @@ import {
 import type { GitlabConfig } from "../config";
 import { findAllIntegrationsByGitlabProject } from "../services/integration-lookup";
 import { snapshotGitlabAssignees } from "../utils/assignee-sync";
+import { createGitlabAssigneeResolver } from "../utils/resolve-assignee";
+import { syncGitlabTaskAssignee } from "../utils/sync-task-assignee";
 import { taskDescriptionFromIssue } from "../utils/issue-description";
 import {
   isEchoOf,
@@ -237,22 +239,14 @@ export async function handleGitlabIssueUpdated(
               { metadata: { gitlabAssignees } },
               db,
             );
-            if (task.userId) {
-              await db
-                .update(taskTable)
-                .set({ userId: null })
-                .where(linkedTaskScope(task.id, integration.projectId));
-              afterCommit(() =>
-                publishEvent("task.unassigned", {
-                  taskId: task.id,
-                  projectId: task.projectId,
-                  title: task.title,
-                  type: "unassigned",
-                  userId: null,
-                }),
-              );
-              task.userId = null;
-            }
+            await syncGitlabTaskAssignee(
+              task,
+              gitlabAssignees,
+              createGitlabAssigneeResolver(config, task.projectId),
+              integration.id,
+              db,
+              afterCommit,
+            );
             afterCommit(() =>
               publishEvent("task.updated", {
                 taskId: task.id,

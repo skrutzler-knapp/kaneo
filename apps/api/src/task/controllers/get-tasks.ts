@@ -354,8 +354,6 @@ async function getTasksPage(
       subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
       ...(isGitlabManaged
         ? {
-            userId: null,
-            assigneeId: null,
             ...gitlabAssigneeDisplay(gitlabAssignees),
           }
         : {}),

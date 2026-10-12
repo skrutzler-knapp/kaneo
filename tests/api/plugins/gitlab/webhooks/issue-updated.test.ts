@@ -16,7 +16,13 @@ const mocks = vi.hoisted(() => {
     ensureGitlabWorkspaceLabels: vi.fn(),
     syncGitlabRelationsForIssues: vi.fn(),
     taskFindFirst: vi.fn(),
+    resolveAssignee: vi.fn(),
     db: {
+      select: () => ({
+        from: () => ({
+          where: () => ({ limit: async () => [{ name: "Ada Lovelace" }] }),
+        }),
+      }),
       insert: () => ({
         values: (values: unknown) => {
           mocks.labelInsert(values);
@@ -40,6 +46,13 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("../../../../../apps/api/src/database", () => ({ default: mocks.db }));
+
+vi.mock(
+  "../../../../../apps/api/src/plugins/gitlab/utils/resolve-assignee",
+  () => ({
+    createGitlabAssigneeResolver: () => mocks.resolveAssignee,
+  }),
+);
 
 vi.mock("../../../../../apps/api/src/events", () => ({
   publishEvent: (...args: unknown[]) => mocks.publishEvent(...args),
@@ -145,6 +158,7 @@ function linkWithLastTitleWrittenByKaneo(title: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.resolveAssignee.mockResolvedValue(null);
   mocks.taskUpdates.length = 0;
   mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([integration]);
   mocks.taskFindFirst.mockResolvedValue({
@@ -285,13 +299,18 @@ describe("handleGitlabIssueUpdated", () => {
         taskId: "task-1",
       }),
     );
-    expect(mocks.publishEvent).toHaveBeenCalledWith("task.unassigned", {
-      taskId: "task-1",
-      projectId: "project-1",
-      userId: null,
-      title: "Old title",
-      type: "unassigned",
-    });
+    expect(mocks.publishEvent).toHaveBeenCalledWith(
+      "task.unassigned",
+      expect.objectContaining({
+        taskId: "task-1",
+        projectId: "project-1",
+        oldAssignee: "existing-kaneo-user",
+        newAssigneeId: null,
+        title: "Old title",
+        type: "unassigned",
+        sourceIntegrationId: "integration-1",
+      }),
+    );
     expect(mocks.updateExternalLink).toHaveBeenCalledWith(
       "link-1",
       expect.objectContaining({
@@ -307,6 +326,51 @@ describe("handleGitlabIssueUpdated", () => {
         },
       }),
       expect.anything(),
+    );
+  });
+
+  it("assigns a linked Kaneo user and emits the notification-driving event", async () => {
+    mocks.resolveAssignee.mockResolvedValue("kaneo-ada");
+    mocks.findExternalLink.mockResolvedValue({
+      id: "link-1",
+      taskId: "task-1",
+      metadata: null,
+    });
+    mocks.taskFindFirst.mockResolvedValue({
+      id: "task-1",
+      projectId: "project-1",
+      title: "Task",
+      userId: null,
+    });
+    mocks.findAllIntegrationsByGitlabProject.mockResolvedValue([
+      {
+        ...integration,
+        config: JSON.stringify({
+          baseUrl: "https://gitlab.com",
+          projectPath: "usekaneo/kaneo",
+          accessToken: "token",
+          gitlabOwnsAssignees: true,
+        }),
+      },
+    ]);
+    await handleGitlabIssueUpdated({
+      ...titleChangedPayload("Task"),
+      changes: {
+        assignees: {
+          current: [{ id: 42, username: "ada", name: "Ada Lovelace" }],
+        },
+      },
+    });
+    expect(mocks.taskUpdates).toEqual([{ userId: "kaneo-ada" }]);
+    expect(mocks.publishEvent).toHaveBeenCalledWith(
+      "task.assignee_changed",
+      expect.objectContaining({
+        taskId: "task-1",
+        oldAssignee: null,
+        newAssigneeId: "kaneo-ada",
+        newAssignee: "Ada Lovelace",
+        sourceIntegrationId: "integration-1",
+      }),
     );
   });
 

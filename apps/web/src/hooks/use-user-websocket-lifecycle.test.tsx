@@ -258,6 +258,21 @@ describe("user WebSocket lifecycle", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it("refreshes personal tasks alongside a new Inbox notification", () => {
+    renderHook(useUserWebSocket);
+    act(() =>
+      TestSocket.instances[0].onmessage?.({
+        data: JSON.stringify({ type: "NOTIFICATION_CREATED" }),
+      }),
+    );
+    expect(client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["notifications"],
+    });
+    expect(client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["assigned-tasks"],
+    });
+  });
+
   it("evicts cached data for projects that left the refreshed list", async () => {
     cachedProjects.mockReturnValueOnce([{ id: "kept" }, { id: "removed" }]);
     client.fetchQuery.mockResolvedValueOnce([{ id: "kept" }, { id: "added" }]);

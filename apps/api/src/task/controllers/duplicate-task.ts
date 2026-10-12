@@ -15,6 +15,7 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
+import { isGitlabAssigneeSourceOfTruth } from "../../plugins/gitlab/utils/assignee-sync";
 import { contentReferencesAsset } from "../../storage/cleanup-assets";
 import { copyTaskAssetObject, deleteS3Object } from "../../storage/s3";
 import { filterUsersWithProjectAccess } from "../../project-access/filter-users-with-project-access";
@@ -155,7 +156,9 @@ async function duplicateTask({
   }
 
   await assertValidTaskStatus(sourceTask.status, sourceTask.projectId);
-  let assigneeId = sourceTask.userId;
+  let assigneeId = (await isGitlabAssigneeSourceOfTruth(sourceTask.projectId))
+    ? null
+    : sourceTask.userId;
   if (assigneeId) {
     const members = await filterAssignableUsers(
       [assigneeId],

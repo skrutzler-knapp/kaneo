@@ -16,6 +16,7 @@ import { publishEvent } from "../../events";
 import {
   createExternalLink,
   findExternalLink,
+  updateExternalLink,
 } from "../../plugins/github/services/link-manager";
 import {
   extractIssuePriority,
@@ -30,6 +31,9 @@ import {
   type GitlabMergeRequest,
 } from "../../plugins/gitlab/utils/gitlab-api";
 import { taskDescriptionFromIssue } from "../../plugins/gitlab/utils/issue-description";
+import { snapshotGitlabAssignees } from "../../plugins/gitlab/utils/assignee-sync";
+import { createGitlabAssigneeResolver } from "../../plugins/gitlab/utils/resolve-assignee";
+import { syncGitlabTaskAssignee } from "../../plugins/gitlab/utils/sync-task-assignee";
 import { syncGitlabLabelCatalog } from "../../plugins/gitlab/utils/sync-gitlab-label-catalog";
 import { syncGitlabRelationsForIssues } from "../../plugins/gitlab/utils/sync-gitlab-task-relations";
 import { isSystemLabelName } from "../../plugins/gitlab/utils/system-labels";
@@ -107,6 +111,7 @@ export async function importGitlabIssues(
   }
 
   const client = createGitlabClient(config);
+  const resolveAssignee = createGitlabAssigneeResolver(config, projectId);
 
   try {
     await syncGitlabLabelCatalog(config, projectId, project.workspaceId);
@@ -137,6 +142,7 @@ export async function importGitlabIssues(
         project.workspaceId,
         config,
         client,
+        resolveAssignee,
       );
 
       if (result === "imported") {
@@ -205,6 +211,7 @@ async function importSingleIssue(
   workspaceId: string,
   config: GitlabConfig,
   client: GitlabClient,
+  resolveAssignee: ReturnType<typeof createGitlabAssigneeResolver>,
 ): Promise<"imported" | "updated" | "skipped"> {
   const existingLink = await findExternalLink(
     integrationId,
@@ -217,6 +224,11 @@ async function importSingleIssue(
   const labels = issue.labels ?? [];
   const priority = extractIssuePriority(labels);
   const status = extractIssueStatus(labels);
+  const assignees = config.gitlabOwnsAssignees
+    ? snapshotGitlabAssignees(
+        issue.assignees ?? (issue.assignee ? [issue.assignee] : []),
+      )
+    : undefined;
 
   const notes = await fetchIssueNotes(issue, config, client);
 
@@ -249,6 +261,25 @@ async function importSingleIssue(
 
         if (priority) updateData.priority = priority;
         if (status) updateData.status = status;
+        if (assignees) {
+          const task = await database.query.taskTable.findFirst({
+            where: linkedTaskScope(existingLink.taskId, projectId),
+          });
+          if (task)
+            await syncGitlabTaskAssignee(
+              task,
+              assignees,
+              resolveAssignee,
+              integrationId,
+              database,
+              afterCommit,
+            );
+          await updateExternalLink(
+            existingLink.id,
+            { metadata: { gitlabAssignees: assignees } },
+            database,
+          );
+        }
 
         await database
           .update(taskTable)
@@ -298,7 +329,7 @@ async function importSingleIssue(
 
       const taskValues: typeof taskTable.$inferInsert = {
         projectId,
-        userId: null,
+        userId: assignees ? await resolveAssignee(assignees, tx) : null,
         title: issue.title,
         description: taskDescriptionFromIssue(issue.description),
         status: status || "to-do",
@@ -327,6 +358,7 @@ async function importSingleIssue(
             state: issue.state,
             createdFrom: "gitlab-import",
             author: issue.author?.username ?? issue.author?.name,
+            ...(assignees ? { gitlabAssignees: assignees } : {}),
           },
         },
         tx,

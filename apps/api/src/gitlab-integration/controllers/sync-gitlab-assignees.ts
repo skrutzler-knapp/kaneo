@@ -1,12 +1,10 @@
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import db from "../../database";
-import {
-  externalLinkTable,
-  integrationTable,
-  taskTable,
-} from "../../database/schema";
+import { externalLinkTable, integrationTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { updateExternalLink } from "../../plugins/github/services/link-manager";
+import { withIntegrationLink } from "../../plugins/github/services/with-integration-link";
+import { linkedTaskScope } from "../../plugins/github/services/integration-task-scope";
 import type { GitlabConfig } from "../../plugins/gitlab/config";
 import {
   mergeGitlabAssigneesMetadata,
@@ -18,9 +16,10 @@ import {
   type GitlabIssue,
 } from "../../plugins/gitlab/utils/gitlab-api";
 import type { GitlabWebhookUser } from "../../plugins/gitlab/utils/payload";
+import { createGitlabAssigneeResolver } from "../../plugins/gitlab/utils/resolve-assignee";
+import { syncGitlabTaskAssignee } from "../../plugins/gitlab/utils/sync-task-assignee";
 
 const PER_PAGE = 100;
-const MAX_PAGES = 50;
 
 type GitlabIssueWithAssignees = GitlabIssue & {
   assignee?: GitlabWebhookUser | null;
@@ -51,76 +50,67 @@ export async function syncGitlabAssigneesForImportedIssues(
   if (links.length === 0) return;
 
   const linkByIid = new Map(links.map((link) => [link.externalId, link]));
-  const taskIds = [...new Set(links.map((link) => link.taskId))];
-  const tasks = await db
-    .select({
-      id: taskTable.id,
-      title: taskTable.title,
-      status: taskTable.status,
-      userId: taskTable.userId,
-    })
-    .from(taskTable)
-    .where(inArray(taskTable.id, taskIds));
-  const taskById = new Map(tasks.map((task) => [task.id, task]));
-  const legacyAssignments = tasks.filter((task) => task.userId !== null);
-  if (legacyAssignments.length > 0) {
-    await db
-      .update(taskTable)
-      .set({ userId: null })
-      .where(
-        and(
-          inArray(
-            taskTable.id,
-            legacyAssignments.map((task) => task.id),
-          ),
-          isNotNull(taskTable.userId),
-        ),
-      );
-    for (const task of legacyAssignments) {
-      await publishEvent("task.unassigned", {
-        taskId: task.id,
-        projectId,
-        userId: null,
-        title: task.title,
-        type: "unassigned",
-      });
-      task.userId = null;
-    }
-  }
+  const resolve = createGitlabAssigneeResolver(config, projectId);
   const client = createGitlabClient(config);
 
-  for (let page = 1; page <= MAX_PAGES; page++) {
+  for (let page = 1; linkByIid.size > 0; page++) {
     const issues = await client.listIssues(config.projectPath, page, "all");
     if (issues.length === 0) break;
 
     for (const issue of issues) {
       const link = linkByIid.get(issue.iid.toString());
       if (!link) continue;
+      linkByIid.delete(issue.iid.toString());
 
       const withAssignees = issue as GitlabIssueWithAssignees;
       const assignees = snapshotGitlabAssignees(
         withAssignees.assignees ??
           (withAssignees.assignee ? [withAssignees.assignee] : []),
       );
-      const previousAssignees = readGitlabAssignees(link.metadata);
-      if (JSON.stringify(previousAssignees) === JSON.stringify(assignees)) {
-        continue;
-      }
-
-      await updateExternalLink(link.id, {
-        metadata: mergeGitlabAssigneesMetadata(link.metadata, assignees),
-      });
-
-      const task = taskById.get(link.taskId);
-      if (task) {
-        await publishEvent("task.updated", {
-          taskId: task.id,
-          projectId,
-          title: task.title,
-          status: task.status,
-          userId: null,
-        });
-      }
+      await withIntegrationLink(
+        link,
+        integration,
+        async (database, afterCommit, lockedLink) => {
+          const task = await database.query.taskTable.findFirst({
+            where: linkedTaskScope(link.taskId, projectId),
+          });
+          if (!task) return;
+          const previousUserId = task.userId;
+          const snapshotChanged =
+            JSON.stringify(readGitlabAssignees(lockedLink.metadata)) !==
+            JSON.stringify(assignees);
+          if (snapshotChanged)
+            await updateExternalLink(
+              link.id,
+              {
+                metadata: mergeGitlabAssigneesMetadata(
+                  lockedLink.metadata,
+                  assignees,
+                ),
+              },
+              database,
+            );
+          await syncGitlabTaskAssignee(
+            task,
+            assignees,
+            resolve,
+            integration.id,
+            database,
+            afterCommit,
+          );
+          if (snapshotChanged || previousUserId !== task.userId)
+            afterCommit(() =>
+              publishEvent("task.updated", {
+                taskId: task.id,
+                projectId,
+                title: task.title,
+                status: task.status,
+                userId: task.userId,
+              }),
+            );
+        },
+        { config: integration.config, type: "gitlab" },
+      );
     }
 
     if (issues.length < PER_PAGE) break;

@@ -44,6 +44,7 @@ import {
 import db, { schema } from "./database";
 import { authDatabaseAdapter } from "./database/auth-adapter";
 import { publishEvent } from "./events";
+import { queueGitlabUserAssignments } from "./gitlab-integration/controllers/queue-gitlab-user-assignments";
 import { applyInvitationProjectAccess } from "./project-access/apply-invitation-project-access";
 import { resolveInvitationProjectAccess } from "./project-access/resolve-invitation-project-access";
 import { clearMemberProjectAccess } from "./project-access/clear-member-project-access";
@@ -605,6 +606,7 @@ export const auth = betterAuth({
           ).catch((error) => {
             console.error("Project member refresh failed:", error);
           });
+          queueGitlabUserAssignments(member.userId, member.organizationId);
         },
         afterUpdateMemberRole: async ({ member }) => {
           if (isOwnerRole(member.role)) {
@@ -614,6 +616,7 @@ export const auth = betterAuth({
         afterAddMember: async ({ member }) => {
           if (member?.organizationId) {
             await handleMemberAdded(member.organizationId, member.userId);
+            queueGitlabUserAssignments(member.userId, member.organizationId);
           }
         },
         afterRemoveMember: async ({ member, user }) => {
@@ -723,6 +726,14 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    account: {
+      create: {
+        after: async (account) => {
+          if (account.providerId === "custom")
+            queueGitlabUserAssignments(account.userId);
+        },
+      },
+    },
     user: {
       delete: {
         after: async (user, ctx) => {
@@ -990,6 +1001,9 @@ export const auth = betterAuth({
               .where(eq(schema.sessionTable.id, newSession.session.id));
           }
         }
+      }
+      if (ctx.context.newSession) {
+        queueGitlabUserAssignments(ctx.context.newSession.user.id);
       }
     }),
   },
