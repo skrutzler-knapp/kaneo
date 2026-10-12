@@ -2899,7 +2899,11 @@
 			"deleteAction": "Excluir tarefa",
 			"completeAria": "Marcar subtarefa como concluída",
 			"progress": "{{completed}} de {{total}} subtarefas concluídas",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Propriedades",

@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import db from "../../database";
 import {
   projectTable,
@@ -14,6 +14,52 @@ async function getTaskRelations(
   workspaceId: string,
   userId: string,
 ) {
+  return getRelationsForTaskIds([taskId], workspaceId, userId);
+}
+
+async function getProjectTaskRelations(
+  projectId: string,
+  workspaceId: string,
+  userId: string,
+) {
+  const projectTaskIds = () =>
+    db
+      .select({ id: taskTable.id })
+      .from(taskTable)
+      .where(eq(taskTable.projectId, projectId));
+
+  return getRelationsForTaskScope(
+    or(
+      inArray(taskRelationTable.sourceTaskId, projectTaskIds()),
+      inArray(taskRelationTable.targetTaskId, projectTaskIds()),
+    ),
+    workspaceId,
+    userId,
+  );
+}
+
+async function getRelationsForTaskIds(
+  taskIdsInScope: string[],
+  workspaceId: string,
+  userId: string,
+) {
+  if (taskIdsInScope.length === 0) return [];
+
+  return getRelationsForTaskScope(
+    or(
+      inArray(taskRelationTable.sourceTaskId, taskIdsInScope),
+      inArray(taskRelationTable.targetTaskId, taskIdsInScope),
+    ),
+    workspaceId,
+    userId,
+  );
+}
+
+async function getRelationsForTaskScope(
+  relationScope: SQL | undefined,
+  workspaceId: string,
+  userId: string,
+) {
   const relations = await db
     .select({
       id: taskRelationTable.id,
@@ -23,12 +69,7 @@ async function getTaskRelations(
       createdAt: taskRelationTable.createdAt,
     })
     .from(taskRelationTable)
-    .where(
-      or(
-        eq(taskRelationTable.sourceTaskId, taskId),
-        eq(taskRelationTable.targetTaskId, taskId),
-      ),
-    );
+    .where(relationScope);
 
   const taskIds = new Set<string>();
   for (const rel of relations) {
@@ -48,6 +89,7 @@ async function getTaskRelations(
       projectId: string;
       userId: string | null;
       assigneeName: string | null;
+      assigneeImage: string | null;
     }
   >();
 
@@ -63,6 +105,7 @@ async function getTaskRelations(
         projectId: taskTable.projectId,
         userId: taskTable.userId,
         assigneeName: userTable.name,
+        assigneeImage: userTable.image,
       })
       .from(taskTable)
       .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
@@ -89,4 +132,5 @@ async function getTaskRelations(
     }));
 }
 
+export { getProjectTaskRelations };
 export default getTaskRelations;

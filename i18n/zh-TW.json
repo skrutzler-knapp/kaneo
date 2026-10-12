@@ -2807,7 +2807,11 @@
 			"deleteAction": "刪除任務",
 			"completeAria": "將子任務標記為完成",
 			"progress": "已完成 {{completed}}/{{total}} 個子任務",
-			"noCompletionColumn": "此專案沒有對應的欄可用來完成或重新開啟這個子任務。"
+			"noCompletionColumn": "此專案沒有對應的欄可用來完成或重新開啟這個子任務。",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "屬性",

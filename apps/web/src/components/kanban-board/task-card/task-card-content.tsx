@@ -62,6 +62,10 @@ type TaskCardContentProps = {
   isFinalColumn?: boolean;
   isDragging: boolean;
   dragListeners: DragListeners;
+  subtaskCount?: number;
+  subtasksExpanded?: boolean;
+  groupSubtasks?: boolean;
+  onToggleSubtasks?: () => void;
 };
 
 function TaskCardContent({
@@ -70,6 +74,10 @@ function TaskCardContent({
   isFinalColumn,
   isDragging,
   dragListeners,
+  subtaskCount = 0,
+  subtasksExpanded = false,
+  groupSubtasks = true,
+  onToggleSubtasks,
 }: TaskCardContentProps) {
   const { t } = useTranslation();
   const { project } = useProjectStore();
@@ -187,14 +195,14 @@ function TaskCardContent({
 
             {showAssignees && (
               <div className="absolute top-3 right-3">
-                {task.userId ? (
+                {task.userId || task.assigneeName ? (
                   <Avatar className="h-5 w-5">
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={assignee?.user?.image ?? task.assigneeImage ?? ""}
+                      alt={assignee?.user?.name || task.assigneeName || ""}
                     />
                     <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(assignee?.user?.name || task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (
@@ -316,7 +324,14 @@ function TaskCardContent({
                 </HoverCard>
               )}
 
-              <TaskProgressBadges task={task} />
+              <TaskProgressBadges
+                task={task}
+                subtaskToggle={
+                  groupSubtasks && subtaskCount > 0 && onToggleSubtasks
+                    ? { expanded: subtasksExpanded, onToggle: onToggleSubtasks }
+                    : undefined
+                }
+              />
 
               {showDueDates && task.dueDate && (
                 <div

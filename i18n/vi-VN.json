@@ -2807,7 +2807,11 @@
 			"deleteAction": "Xóa công việc",
 			"completeAria": "Đánh dấu hoàn thành công việc con",
 			"progress": "Đã hoàn thành {{completed}} trên {{total}} công việc con",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Thuộc tính",

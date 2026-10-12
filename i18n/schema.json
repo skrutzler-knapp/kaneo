@@ -12039,6 +12039,18 @@
 						},
 						"completeAria": {
 							"type": "string"
+						},
+						"groupToggle": {
+							"type": "string"
+						},
+						"expandAction": {
+							"type": "string"
+						},
+						"collapseAction": {
+							"type": "string"
+						},
+						"relationCreateError": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -12054,7 +12066,11 @@
 						"deleteDialogTitle",
 						"deleteDialogDescription",
 						"deleteAction",
-						"completeAria"
+						"completeAria",
+						"groupToggle",
+						"expandAction",
+						"collapseAction",
+						"relationCreateError"
 					]
 				},
 				"properties": {

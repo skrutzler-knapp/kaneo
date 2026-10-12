@@ -3486,7 +3486,11 @@
 			"inputPlaceholder": "Tytuł podzadania...",
 			"title": "Podzadania",
 			"progress": "Ukończone podzadania: {{completed}} z {{total}}",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"update": {
 			"error": "Nie udało się zaktualizować zadania",

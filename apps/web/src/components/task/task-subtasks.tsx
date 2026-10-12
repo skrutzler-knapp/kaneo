@@ -24,7 +24,6 @@ import getColumns from "@/fetchers/column/get-columns";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
-import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
@@ -64,7 +63,6 @@ export default function TaskSubtasks({
     workspace?.id ?? "",
   );
   const createTask = useCreateTask();
-  const createRelation = useCreateTaskRelation();
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { data: columns = [], isLoading: isLoadingColumns } =
@@ -122,6 +120,7 @@ export default function TaskSubtasks({
     userId: subtask.task.userId,
     assigneeId: subtask.task.userId,
     assigneeName: subtask.task.assigneeName,
+    assigneeImage: subtask.task.assigneeImage,
     projectId: subtask.task.projectId,
   });
 
@@ -267,18 +266,13 @@ export default function TaskSubtasks({
     if (!initialStatus) return;
 
     try {
-      const newTask = await createTask.mutateAsync({
+      await createTask.mutateAsync({
         title: newTitle.trim(),
         description: "",
         projectId,
         status: initialStatus,
         priority: "no-priority",
-      });
-
-      await createRelation.mutateAsync({
-        sourceTaskId: taskId,
-        targetTaskId: newTask.id,
-        relationType: "subtask",
+        parentTaskId: taskId,
       });
 
       setNewTitle("");

@@ -2854,7 +2854,11 @@
 			"deleteDialogTitle": "Delete Task?",
 			"deleteDialogDescription": "This will permanently remove the task and all its data. You can't undo this action.",
 			"deleteAction": "Delete Task",
-			"completeAria": "Mark subtask complete"
+			"completeAria": "Mark subtask complete",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Properties",

@@ -1,4 +1,4 @@
-import { ListTree, SquareCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, ListTree, SquareCheck } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
@@ -10,9 +10,11 @@ import type Task from "@/types/task";
 export function TaskProgressBadges({
   task,
   asText = false,
+  subtaskToggle,
 }: {
   task: Pick<Task, "description" | "descriptionDeferred" | "subtaskCounts">;
   asText?: boolean;
+  subtaskToggle?: { expanded: boolean; onToggle: () => void };
 }) {
   const { t } = useTranslation();
   const { showTaskItemCounts } = useUserPreferencesStore();
@@ -67,6 +69,38 @@ export function TaskProgressBadges({
             {content}
           </span>
         </span>
+      );
+    }
+
+    if (kind === "subtasks" && subtaskToggle) {
+      const actionLabel = t(
+        subtaskToggle.expanded
+          ? "tasks:subtasks.collapseAction"
+          : "tasks:subtasks.expandAction",
+      );
+      const Chevron = subtaskToggle.expanded ? ChevronUp : ChevronDown;
+      return (
+        <Tooltip key={kind}>
+          <TooltipTrigger
+            aria-label={`${actionLabel}, ${label}`}
+            aria-expanded={subtaskToggle.expanded}
+            className={cn(
+              className,
+              "relative cursor-pointer transition-colors after:absolute after:-inset-1.5 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
+            // The card is a drag handle and opens on click/Enter.
+            onPointerDown={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              subtaskToggle.onToggle();
+            }}
+          >
+            {content}
+            <Chevron className="size-3" aria-hidden="true" />
+          </TooltipTrigger>
+          <TooltipPopup>{label}</TooltipPopup>
+        </Tooltip>
       );
     }
 

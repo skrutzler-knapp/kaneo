@@ -2807,7 +2807,11 @@
 			"deleteAction": "작업 삭제",
 			"completeAria": "하위 작업을 완료로 표시",
 			"progress": "하위 작업 {{total}}개 중 {{completed}}개 완료",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "속성",

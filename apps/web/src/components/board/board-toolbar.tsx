@@ -1,4 +1,4 @@
-import { Filter, PanelsTopLeft, Rows3, X } from "lucide-react";
+import { Filter, ListTree, PanelsTopLeft, Rows3, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import SortControl from "@/components/common/sort-control";
@@ -28,6 +28,7 @@ import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon } from "@/lib/priority";
 import type { SortConfig } from "@/lib/sort-tasks";
 import { useBackgroundStore } from "@/store/background";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 
 type WorkspaceLabel = {
@@ -164,6 +165,10 @@ export default function BoardToolbar({
   usedCustomFieldValues = {},
 }: BoardToolbarProps) {
   const { t } = useTranslation();
+  const groupSubtasks = useUserPreferencesStore((state) => state.groupSubtasks);
+  const setGroupSubtasks = useUserPreferencesStore(
+    (state) => state.setGroupSubtasks,
+  );
   const selectedStatusIds = filters.status ?? [];
   const selectedPriorityIds = filters.priority ?? [];
   const selectedAssigneeIds = filters.assignee ?? [];
@@ -698,6 +703,22 @@ export default function BoardToolbar({
 
             <SortControl sort={sort} onSortChange={onSortChange} />
 
+            {viewMode === "board" && (
+              <button
+                type="button"
+                aria-pressed={groupSubtasks}
+                className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  groupSubtasks
+                    ? "bg-accent text-foreground"
+                    : "bg-background text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                }`}
+                onClick={() => setGroupSubtasks(!groupSubtasks)}
+              >
+                <ListTree className="h-3.5 w-3.5" />
+                {t("tasks:subtasks.groupToggle")}
+              </button>
+            )}
+
             {selectedStatusIds.length > 0 && (
               <ActiveFilterChip
                 subject={t("tasks:boardFilters.subjects.status")}
@@ -835,21 +856,31 @@ export default function BoardToolbar({
           </div>
 
           <div className="inline-flex items-center gap-1">
+            <div className="inline-flex h-7 items-center rounded-md border border-border bg-background p-0.5">
+              <div
+                className={`inline-flex h-6 items-center rounded-sm ${
+                  viewMode === "board" ? "bg-accent" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  aria-pressed={viewMode === "board"}
+                  className={`inline-flex h-6 items-center gap-1 rounded-sm px-2 text-xs font-medium transition-colors ${
+                    viewMode === "board"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  }`}
+                  onClick={() => setViewMode("board")}
+                >
+                  <PanelsTopLeft className="h-3 w-3" />
+                  {t("tasks:view.board")}
+                </button>
+              </div>
+            </div>
             <button
               type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                viewMode === "board"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              }`}
-              onClick={() => setViewMode("board")}
-            >
-              <PanelsTopLeft className="h-3 w-3" />
-              {t("tasks:view.board")}
-            </button>
-            <button
-              type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
+              aria-pressed={viewMode === "list"}
+              className={`inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs font-medium transition-colors ${
                 viewMode === "list"
                   ? "bg-accent text-foreground"
                   : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"

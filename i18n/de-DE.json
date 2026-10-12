@@ -2853,7 +2853,11 @@
 			"deleteAction": "Aufgabe löschen",
 			"completeAria": "Teilaufgabe als erledigt markieren",
 			"progress": "{{completed}} von {{total}} Unteraufgaben abgeschlossen",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
+			"groupToggle": "Group subtasks",
+			"expandAction": "Show subtasks",
+			"collapseAction": "Hide subtasks",
+			"relationCreateError": "Task created, but it could not be linked as a subtask."
 		},
 		"properties": {
 			"title": "Eigenschaften",

@@ -197,7 +197,7 @@ it("preserves distinct task effects across pagination and a disconnect before re
       queryKey: ["comments", "a"],
     });
     expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ["labels", "a"],
+      queryKey: ["labels"],
     });
   } finally {
     vi.useRealTimers();
@@ -464,7 +464,7 @@ it("drains queued detail events after retries fall back to polling", async () =>
     for (const key of [
       ["comments", "a"],
       ["activities", "a"],
-      ["labels", "a"],
+      ["labels"],
       ["task", "a"],
       ["external-links", "a"],
       ["task-relations", "b"],

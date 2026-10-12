@@ -27,16 +27,21 @@ import { boardCollisionDetection } from "./board-collision-detection";
 import { findTaskColumn } from "./drag-preview/find-task-column";
 import { moveBoardTask } from "./move-task";
 import { useDragPreview } from "./drag-preview/use-drag-preview";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import useGetProjectTaskRelations from "@/hooks/queries/task-relation/use-get-project-task-relations";
+import type { ProjectTaskRelation } from "@/fetchers/task-relation/get-project-task-relations";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useProjectBackground } from "@/hooks/use-project-background";
 import { cn } from "@/lib/cn";
 import { useBackgroundStore } from "@/store/background";
 import useBulkSelectionStore from "@/store/bulk-selection";
 import useProjectStore from "@/store/project";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
+import type Task from "@/types/task";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import Column from "./column";
+import SubtaskExpansionPanel from "./subtask-expansion-panel";
 import TaskCard from "./task-card";
 
 type KanbanBoardProps = {
@@ -46,6 +51,20 @@ type KanbanBoardProps = {
   sortedByNumber?: boolean;
   sortedByPriority?: boolean;
 };
+
+function taskFromRelation(
+  task: NonNullable<ProjectTaskRelation["targetTask"]>,
+): Task {
+  return {
+    ...task,
+    description: null,
+    startDate: null,
+    dueDate: null,
+    position: null,
+    createdAt: "",
+    assigneeId: task.userId,
+  };
+}
 
 function KanbanBoard({
   project,
@@ -107,6 +126,9 @@ function KanbanBoard({
       void queryClient.invalidateQueries({ queryKey: ["tasks", project.id] });
     },
   });
+  const [expandedSubtaskIds, setExpandedSubtaskIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const background = useProjectBackground({
     backgroundVersion: project.backgroundVersion,
     projectId: project.id,
@@ -114,6 +136,128 @@ function KanbanBoard({
   });
   const { setBackground } = useBackgroundStore();
   const navigate = useNavigate();
+  const groupSubtasks = useUserPreferencesStore((state) => state.groupSubtasks);
+  const { data: relations = [] } = useGetProjectTaskRelations(project.id, {
+    enabled: groupSubtasks,
+  });
+  const visibleProject = dragPreview.preview ?? project;
+
+  const boardState = useMemo(() => {
+    const allBoardTasks = visibleProject.columns.flatMap(
+      (column) => column.tasks,
+    );
+    const boardTaskById = new Map(allBoardTasks.map((task) => [task.id, task]));
+    const taskOrderById = new Map(
+      allBoardTasks.map((task, index) => [task.id, index]),
+    );
+    const childTaskIds = new Set<string>();
+    const subtasksByParentId = new Map<string, Task[]>();
+
+    for (const relation of relations) {
+      if (
+        relation.relationType !== "subtask" ||
+        !boardTaskById.has(relation.sourceTaskId) ||
+        !relation.targetTask ||
+        relation.targetTask.projectId !== project.id
+      ) {
+        continue;
+      }
+
+      const children = subtasksByParentId.get(relation.sourceTaskId) ?? [];
+      children.push(
+        boardTaskById.get(relation.targetTaskId) ??
+          taskFromRelation(relation.targetTask),
+      );
+      subtasksByParentId.set(relation.sourceTaskId, children);
+
+      if (groupSubtasks && boardTaskById.has(relation.targetTaskId)) {
+        childTaskIds.add(relation.targetTaskId);
+      }
+    }
+
+    for (const children of subtasksByParentId.values()) {
+      children.sort(
+        (left, right) =>
+          (taskOrderById.get(left.id) ?? Number.POSITIVE_INFINITY) -
+          (taskOrderById.get(right.id) ?? Number.POSITIVE_INFINITY),
+      );
+    }
+
+    const columns = visibleProject.columns.map((column) => ({
+      ...column,
+      tasks: column.tasks.filter(
+        (task) => !groupSubtasks || !childTaskIds.has(task.id),
+      ),
+    }));
+    const rowByTaskId = new Map<string, number>();
+    const expansionRows: Array<{
+      parent: Task;
+      subtasks: Task[];
+      taskOrderById: ReadonlyMap<string, number>;
+      row: number;
+    }> = [];
+    const cursors = columns.map(() => 0);
+    let row = 0;
+
+    while (
+      cursors.some((cursor, index) => cursor < columns[index].tasks.length)
+    ) {
+      let expansion: Omit<(typeof expansionRows)[number], "row"> | null = null;
+
+      for (const [columnIndex, column] of columns.entries()) {
+        const task = column.tasks[cursors[columnIndex]];
+        if (!task) continue;
+
+        const subtasks = subtasksByParentId.get(task.id) ?? [];
+        const isExpanded =
+          groupSubtasks &&
+          expandedSubtaskIds.has(task.id) &&
+          subtasks.length > 0;
+        // One expanded parent per row keeps each panel directly below its card.
+        if (isExpanded && expansion) continue;
+
+        rowByTaskId.set(task.id, row);
+        cursors[columnIndex]++;
+        if (isExpanded) {
+          expansion = {
+            parent: task,
+            subtasks,
+            taskOrderById,
+          };
+        }
+      }
+      row++;
+
+      if (expansion) {
+        expansionRows.push({ ...expansion, row });
+        row++;
+      }
+    }
+
+    return {
+      columns,
+      childTaskIds,
+      rowByTaskId,
+      subtasksByParentId,
+      expansionRows,
+      boardRowCount: Math.max(row, 1),
+    };
+  }, [
+    expandedSubtaskIds,
+    groupSubtasks,
+    visibleProject.columns,
+    project.id,
+    relations,
+  ]);
+
+  const toggleSubtasks = useCallback((taskId: string) => {
+    setExpandedSubtaskIds((current) => {
+      const next = new Set(current);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     setBackground(background);
@@ -125,12 +269,12 @@ function KanbanBoard({
 
   useEffect(() => {
     if (project?.columns) {
-      const allTaskIds = project.columns.flatMap((column) =>
+      const allTaskIds = boardState.columns.flatMap((column) =>
         column.tasks.map((task) => task.id),
       );
       setAvailableTasks(allTaskIds);
     }
-  }, [project, setAvailableTasks]);
+  }, [boardState.columns, project, setAvailableTasks]);
 
   useEffect(() => {
     clearFocus();
@@ -216,6 +360,7 @@ function KanbanBoard({
       dragPreview.clear();
       return;
     }
+    if (active.data?.current?.type === "subtask") return;
     if (!isAutomaticallySorted) {
       dragPreview.hover(active, over);
       return;
@@ -228,7 +373,28 @@ function KanbanBoard({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     const activeId = active.id.toString();
-    const overId = over?.id.toString();
+    let overId = over?.id.toString();
+    const activeData = active.data?.current;
+    const overData = over?.data?.current;
+    if (activeData?.type === "subtask") {
+      if (overData?.parentTaskId !== activeData.parentTaskId) {
+        resetDrag();
+        return;
+      }
+      if (overData?.type === "subtask-lane") {
+        const destination = project.columns.find(
+          (column) => column.slug === overData.status,
+        );
+        const siblings = destination?.tasks.filter((task) =>
+          (
+            boardState.subtasksByParentId.get(activeData.parentTaskId) ?? []
+          ).some((child) => child.id === task.id),
+        );
+        overId =
+          siblings?.filter((task) => task.id !== activeId).at(-1)?.id ??
+          destination?.id;
+      }
+    }
     const placement = overId
       ? dragPreview.getDropPlacement(activeId, overId)
       : null;
@@ -312,6 +478,13 @@ function KanbanBoard({
         .flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
+  const sharedColumnProps = {
+    disableDragDrop,
+    subtasksByParentId: boardState.subtasksByParentId,
+    expandedParentIds: expandedSubtaskIds,
+    groupSubtasks,
+    onToggleSubtasks: toggleSubtasks,
+  };
 
   return (
     <DndContext
@@ -329,25 +502,47 @@ function KanbanBoard({
       >
         <div
           className={cn(
-            "min-h-0 flex-1 scroll-px-4 overflow-x-auto [-webkit-overflow-scrolling:touch]",
-            // Snap whole columns into view on phones; off while dragging so it
-            // doesn't fight dnd-kit's auto-scroll.
-            activeId === null && "snap-x snap-mandatory sm:snap-none",
+            "min-h-0 flex-1 scroll-px-4 [-webkit-overflow-scrolling:touch]",
+            groupSubtasks ? "overflow-auto" : "overflow-x-auto",
+            !groupSubtasks &&
+              activeId === null &&
+              "snap-x snap-mandatory sm:snap-none",
           )}
         >
-          <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
-            {(dragPreview.preview ?? project).columns.map((column) => (
+          <div
+            className={
+              groupSubtasks
+                ? "grid min-w-max items-start gap-x-4 gap-y-2 px-4 py-4 md:px-5"
+                : "flex h-full min-w-max gap-4 px-4 py-4 md:px-5"
+            }
+            style={
+              groupSubtasks
+                ? {
+                    gridTemplateColumns: `repeat(${boardState.columns.length}, minmax(min(20rem, calc(100vw - 4.5rem)), 24rem))`,
+                    gridTemplateRows: `auto repeat(${boardState.boardRowCount}, minmax(0, max-content))`,
+                  }
+                : undefined
+            }
+          >
+            {boardState.columns.map((column, columnIndex) => (
               <div
                 key={column.id}
-                className={cn(
-                  "h-full max-w-96 min-w-[min(20rem,calc(100vw-4.5rem))] shrink-0 flex-1 snap-start",
-                  {
-                    "h-fit": !!background,
-                  },
-                )}
+                className={
+                  groupSubtasks
+                    ? "contents"
+                    : cn(
+                        "h-full max-w-96 min-w-[min(20rem,calc(100vw-4.5rem))] shrink-0 flex-1 snap-start",
+                        {
+                          "h-fit": !!background,
+                        },
+                      )
+                }
               >
                 <Column
+                  key={column.id}
                   column={column}
+                  layout={groupSubtasks ? "grid" : "flex"}
+                  {...sharedColumnProps}
                   activeTaskId={activeId?.toString() ?? null}
                   sortHint={
                     column.id === sortHintColumnId
@@ -360,11 +555,26 @@ function KanbanBoard({
                         })
                       : undefined
                   }
-                  disableDragDrop={disableDragDrop}
                   disableSorting={isAutomaticallySorted}
                   disableCollectionActions={disableCollectionActions}
+                  columnIndex={columnIndex}
+                  boardRowCount={boardState.boardRowCount}
+                  rowByTaskId={boardState.rowByTaskId}
+                  subtasksByParentId={boardState.subtasksByParentId}
+                  expandedParentIds={expandedSubtaskIds}
+                  groupSubtasks={groupSubtasks}
+                  onToggleSubtasks={toggleSubtasks}
+                  disableDragDrop={disableDragDrop}
                 />
               </div>
+            ))}
+            {boardState.expansionRows.map((expansion) => (
+              <SubtaskExpansionPanel
+                key={expansion.parent.id}
+                {...expansion}
+                columns={boardState.columns}
+                disableDragDrop={disableDragDrop}
+              />
             ))}
           </div>
         </div>
@@ -373,7 +583,11 @@ function KanbanBoard({
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} isFinalColumn={activeIsFinal} />
+              <TaskCard
+                task={activeTask}
+                isFinalColumn={activeIsFinal}
+                disableDragDrop
+              />
             </div>
           </div>
         ) : null}

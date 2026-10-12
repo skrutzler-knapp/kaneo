@@ -189,4 +189,58 @@ describe("project WebSocket lifecycle", () => {
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it("invalidates project relations when another session creates a subtask", () => {
+    renderHook(() => useProjectWebSocket("project-a"));
+    const socket = TestSocket.instances[0];
+    act(() => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: "TASK_RELATION_UPDATED",
+          projectId: "project-a",
+          sourceTaskId: "parent-a",
+          targetTaskId: "child-a",
+        }),
+      });
+    });
+
+    expect(client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["task-relations", "project", "project-a"],
+    });
+  });
+
+  it("invalidates label filters when the GitLab workspace label catalog changes", () => {
+    renderHook(() => useProjectWebSocket("project-a"));
+    const socket = TestSocket.instances[0];
+    act(() => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: "WORKSPACE_LABELS_UPDATED",
+          projectId: "project-a",
+        }),
+      });
+    });
+
+    expect(client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["labels"],
+    });
+  });
+
+  it("refreshes task chips and workspace filters when another session syncs a task label", () => {
+    renderHook(() => useProjectWebSocket("project-a"));
+    const socket = TestSocket.instances[0];
+    act(() => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: "TASK_LABEL_UPDATED",
+          projectId: "project-a",
+          taskId: "task-a",
+        }),
+      });
+    });
+
+    expect(client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["labels"],
+    });
+  });
 });

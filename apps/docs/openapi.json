@@ -3990,6 +3990,12 @@
               "string",
               "null"
             ]
+          },
+          "assigneeImage": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -4001,7 +4007,8 @@
           "number",
           "projectId",
           "userId",
-          "assigneeName"
+          "assigneeName",
+          "assigneeImage"
         ]
       },
       "TaskRelation": {
@@ -11234,7 +11241,7 @@
           "Tasks"
         ],
         "summary": "Create task",
-        "description": "Add a task to a project. It is placed in the column named by `status`.",
+        "description": "Add a task to a project, optionally assigning workspace labels and linking it as a subtask in the same transaction. It is placed in the column named by `status`.",
         "parameters": [
           {
             "schema": {
@@ -11257,6 +11264,18 @@
                   },
                   "description": {
                     "type": "string"
+                  },
+                  "parentTaskId": {
+                    "type": "string",
+                    "description": "Create this task as a subtask of another task in the project."
+                  },
+                  "labelIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 100,
+                    "description": "Workspace labels to assign to the task during creation."
                   },
                   "startDate": {
                     "type": "string"
@@ -11350,7 +11369,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:create permission",
+            "description": "No access to the project, or missing task:create, label:update, or parent task:update permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -11360,7 +11379,17 @@
             }
           },
           "404": {
-            "description": "Project not found",
+            "description": "Project, parent task, or workspace label not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A selected workspace label is being deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -20759,6 +20788,74 @@
           },
           "404": {
             "description": "Project or Telegram integration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task-relation/project/{projectId}": {
+      "get": {
+        "operationId": "getProjectTaskRelations",
+        "tags": [
+          "Task Relations"
+        ],
+        "summary": "Get task relations for a project",
+        "description": "Get task relations touching tasks in a project, including related task summaries. Relations pointing outside the caller's workspace are omitted.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project task relations with linked task summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskRelationWithTasks"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
             "content": {
               "application/json": {
                 "schema": {
