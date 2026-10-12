@@ -30,6 +30,8 @@ import {
   type GitlabMergeRequest,
 } from "../../plugins/gitlab/utils/gitlab-api";
 import { taskDescriptionFromIssue } from "../../plugins/gitlab/utils/issue-description";
+import { syncGitlabLabelCatalog } from "../../plugins/gitlab/utils/sync-gitlab-label-catalog";
+import { syncGitlabRelationsForIssues } from "../../plugins/gitlab/utils/sync-gitlab-task-relations";
 import { isSystemLabelName } from "../../plugins/gitlab/utils/system-labels";
 import { claimTaskNumber } from "../../task/controllers/claim-task-numbers";
 
@@ -106,6 +108,12 @@ export async function importGitlabIssues(
 
   const client = createGitlabClient(config);
 
+  try {
+    await syncGitlabLabelCatalog(config, projectId, project.workspaceId);
+  } catch (error) {
+    console.error("Failed to sync GitLab label catalog:", error);
+  }
+
   const allIssues: GitlabIssue[] = [];
   for (let page = 1; page <= MAX_PAGES; page++) {
     const issues = await client.listIssues(config.projectPath, page, "opened");
@@ -142,6 +150,18 @@ export async function importGitlabIssues(
       const message = error instanceof Error ? error.message : String(error);
       errors.push(`Issue !${issue.iid}: ${message}`);
     }
+  }
+
+  try {
+    await syncGitlabRelationsForIssues(
+      projectId,
+      integration.id,
+      config.projectPath,
+      allIssues.map((issue) => issue.iid),
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`Subtask relations: ${message}`);
   }
 
   const allMergeRequests: GitlabMergeRequest[] = [];

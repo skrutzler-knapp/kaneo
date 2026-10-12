@@ -98,14 +98,16 @@ function mergeRequestOpen(draft: boolean) {
 function issueEvent({
   action,
   eventType = "issue",
+  objectKind = "issue",
   confidential = false,
 }: {
   action: string;
   eventType?: string;
+  objectKind?: string;
   confidential?: boolean;
 }) {
   return JSON.stringify({
-    object_kind: "issue",
+    object_kind: objectKind,
     event_type: eventType,
     object_attributes: {
       iid: 7,
@@ -246,6 +248,24 @@ describe("handleGitlabWebhookRequest confidential issues", () => {
     );
 
     expect(mocks.handleGitlabIssueUpdated).toHaveBeenCalledOnce();
+  });
+
+  it("dispatches Task work-item updates through the issue update handler", async () => {
+    const result = await handleGitlabWebhookRequest(
+      "integration-1",
+      issueEvent({
+        action: "update",
+        eventType: "work_item",
+        objectKind: "work_item",
+      }),
+      secret,
+    );
+
+    expect(result.success).toBe(true);
+    expect(mocks.handleGitlabIssueUpdated).toHaveBeenCalledWith(
+      expect.anything(),
+      "integration-1",
+    );
   });
 
   it("drops an update to an issue that was made confidential", async () => {

@@ -154,7 +154,8 @@ async function dispatchGitlabEvent(
         await handleGitlabPush(payload, integrationId);
       }
       return;
-    case "issue": {
+    case "issue":
+    case "work_item": {
       if (!isIssuePayload(payload) || isConfidentialIssue(payload)) {
         return;
       }
